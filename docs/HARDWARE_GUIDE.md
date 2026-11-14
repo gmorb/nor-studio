@@ -102,6 +102,18 @@ A cluster of 10 round pads near the curved board edge by the fan cut‑out. A me
 
 No official schematic or boardview is included here. Pinouts from launch boards **do not** carry over. Confirm each pad with a meter before soldering.
 
+### NOR chip (confirmed on EDM‑041)
+
+- **Part:** Winbond **W25Q16JV**, top marking `25Q16JVNIM`: 2 MB, **3.3 V**, SOIC‑8, JEDEC ID `EF 40 15`. It's the same chip as EDM‑010/020.
+- **Location:** right of the southbridge (`SIE CXD90069GG`), with a column of 8 small resistors between them.
+- **Pin 1:** the dot. With the text upright it's the lower‑left pin. Pins 1–4 run along the bottom (CS, DO, WP, GND) and 5–8 along the top from right to left (DI, CLK, HOLD, VCC).
+- Use a 3.3 V‑modded CH341A with no 1.8 V adapter. The reset point isn't mapped for EDM‑04x yet, so if in‑circuit reads are unstable, lift pin 8 or remove the chip and use an SOP8 adapter.
+
+<p>
+  <img src="boards/edm-041-nor-and-southbridge.jpg" alt="EDM-041: southbridge CXD90069GG with the Winbond 25Q16JVNIM NOR to its right" width="49%">
+  <img src="boards/edm-041-nor-closeup.jpg" alt="EDM-041 NOR close-up: Winbond 25Q16JVNIM, pin 1 dot at lower left" width="49%">
+</p>
+
 - The UART protocol is the same (115200 baud, `errlog` commands).
 - Find TX with a meter: in standby it idles at ≈3.3 V. Confirm GND with continuity.
 - Find the NOR near the southbridge and read its marking. `W25Q…JV/V` means 3.3 V; `25U…`, `W25Q…W` and `GD25LQ…` mean 1.8 V and need a 1.8 V adapter.

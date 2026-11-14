@@ -14,6 +14,9 @@
 - "Run list…" is locked while error codes are being read, and reading is locked while a list runs.
 - Error-code rows no longer overflow the screen on phones.
 - "Copied" notifications no longer flash the light bar, and at most 4 notifications stack at once.
+
+### Hardware guide
+- EDM‑041 NOR confirmed: Winbond W25Q16JV (3.3 V, SOIC‑8) next to the southbridge, with location and pinout diagram and board photos.
 - The empty tag next to "Advanced" in the NOR editor no longer shows.
 
 ## v1.1.0

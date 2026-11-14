@@ -715,6 +715,46 @@ h1,h2,h3{text-wrap:balance}
   <div id="guide-b4" class="hidden">
     <div class="grid g2" style="margin-bottom:18px">
       <div class="card">
+        <h2>NOR chip <span class="tag blue">EDM-041</span></h2>
+        <p class="sub">Winbond <b>W25Q16JV</b> (marked <code style="font-family:var(--mono)">25Q16JVNIM</code>): 2&nbsp;MB, <b>3.3&nbsp;V</b>, SOIC-8, chip ID <code style="font-family:var(--mono)">EF 40 15</code>. It's the same part as the launch boards. It sits right of the southbridge (<code style="font-family:var(--mono)">SIE CXD90069GG</code>), with a column of 8 small resistors between them.</p>
+        <svg viewBox="0 0 560 300" class="diagram" role="img" aria-label="EDM-041 NOR location and pinout">
+          <rect x="20" y="30" width="200" height="220" rx="6" class="chip"/>
+          <text x="120" y="135" class="chiplbl" style="font-size:14px">Southbridge</text><text x="120" y="156" class="chipsub">SIE CXD90069GG</text>
+          <g fill="#2a3242" stroke="rgba(255,255,255,.18)">
+            <rect x="248" y="78" width="12" height="9" rx="1.5"/><rect x="268" y="78" width="12" height="9" rx="1.5"/>
+            <rect x="248" y="100" width="12" height="9" rx="1.5"/><rect x="268" y="100" width="12" height="9" rx="1.5"/>
+            <rect x="248" y="122" width="12" height="9" rx="1.5"/><rect x="268" y="122" width="12" height="9" rx="1.5"/>
+            <rect x="248" y="144" width="12" height="9" rx="1.5"/><rect x="268" y="144" width="12" height="9" rx="1.5"/>
+          </g>
+          <text x="264" y="175" class="landt" style="font-size:10.5px">resistors</text>
+          <rect x="318" y="72" width="180" height="120" rx="6" class="chip"/>
+          <text x="408" y="122" class="chiplbl" style="font-size:15px">W25Q16JV</text><text x="408" y="142" class="chipsub">NOR · top view</text>
+          <circle cx="338" cy="174" r="7" class="pin1"/>
+          <g class="pins">
+            <rect x="330" y="192" width="16" height="20"/><rect x="371" y="192" width="16" height="20"/><rect x="412" y="192" width="16" height="20"/><rect x="453" y="192" width="16" height="20"/>
+            <rect x="330" y="52" width="16" height="20"/><rect x="371" y="52" width="16" height="20"/><rect x="412" y="52" width="16" height="20"/><rect x="453" y="52" width="16" height="20"/>
+          </g>
+          <g class="pinno"><text x="338" y="206">1</text><text x="379" y="206">2</text><text x="420" y="206">3</text><text x="461" y="206">4</text>
+            <text x="338" y="66">8</text><text x="379" y="66">7</text><text x="420" y="66">6</text><text x="461" y="66">5</text></g>
+          <g class="net" style="font-size:11px">
+            <text x="338" y="232" text-anchor="middle" style="font-size:11px">CS</text><text x="379" y="232" text-anchor="middle" style="font-size:11px">DO</text><text x="420" y="232" text-anchor="middle" style="font-size:11px">WP</text><text x="461" y="232" text-anchor="middle" class="gnd" style="font-size:11px">GND</text>
+            <text x="338" y="40" text-anchor="middle" class="vcc" style="font-size:11px">VCC</text><text x="379" y="40" text-anchor="middle" style="font-size:11px">HOLD</text><text x="420" y="40" text-anchor="middle" style="font-size:11px">CLK</text><text x="461" y="40" text-anchor="middle" style="font-size:11px">DI</text>
+          </g>
+          <text x="280" y="285" class="foot">As in the photo: text reads upright, dot (pin 1) at lower left. Clip red wire goes to pin 1.</text>
+        </svg>
+      </div>
+      <div class="card">
+        <h2>Dump / flash on EDM-04x</h2>
+        <ol class="steps">
+          <li>Same 3.3&nbsp;V chip as the launch boards: a <b>3.3&nbsp;V-modded</b> CH341A, no 1.8&nbsp;V adapter.</li>
+          <li>AC unplugged. Clip on with the red wire on pin&nbsp;1 (the dot). Programmer tab → Connect → expect <code>EF 40 15</code>, "Winbond W25Q16JV".</li>
+          <li>Read with "read twice" on. If the ID reads <code>00 00 00</code>/<code>FF FF FF</code> or the reads don't match, the board is probably loading the clip's power. The EDM-04x reset point isn't mapped here, so lift pin&nbsp;8 or take the chip off and use an SOP8 adapter.</li>
+          <li>Save the backup before editing. Disc ↔ Digital switching is disabled for Slim dumps; serial/SKU edits and the health check work.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="grid g2" style="margin-bottom:18px">
+      <div class="card">
         <h2>UART pads <span class="tag blue">EDM-040/041/044 and later</span></h2>
         <p class="sub">A cluster of 10 round pads near the curved board edge by the fan cut-out. A metal screw bracket and the two WiFi antenna cables (blue and white) are just above and to the right. A long ribbon connector runs below.</p>
         <svg viewBox="0 0 560 320" class="diagram" role="img" aria-label="UART pad layout EDM-04x">
@@ -758,7 +798,7 @@ h1,h2,h3{text-wrap:balance}
       <div class="card">
         <h2>Slim boards (EDM-040/041/044)</h2>
         <ul class="checks" style="margin-top:10px">
-          <li class="warnl"><span class="ic">!</span><div>No official schematic or boardview in this guide<small>The pinouts and pad maps for EDM-010/020 do <b>not</b> carry over. Treat everything here as "verify first".</small></div></li>
+          <li class="warnl"><span class="ic">!</span><div>No official schematic or boardview in this guide<small>The NOR and UART points above come from photos. The pinouts and pad maps for EDM-010/020 do <b>not</b> carry over. Treat everything here as "verify first".</small></div></li>
           <li class="pass"><span class="ic">✓</span><div>The UART protocol is the same<small>Same 115200 baud and <code>errlog</code> commands. The UART tab works unchanged once you've found TX/RX/GND.</small></div></li>
           <li class="pass"><span class="ic">✓</span><div>Dumps are still 2&nbsp;MB<small>Reading, backups, serial/SKU edits and health checks work. Disc↔Digital switching is disabled for Slim dumps (single edition flag).</small></div></li>
         </ul>
@@ -766,7 +806,7 @@ h1,h2,h3{text-wrap:balance}
       <div class="card">
         <h2>Finding the points yourself</h2>
         <ol class="steps">
-          <li><b>NOR</b>: an 8-pin chip near the southbridge. Read its marking: <code>25Q16JV</code>/<code>W25Q…V</code> means 3.3&nbsp;V; <code>25U…</code>/<code>W25Q…W</code>/<code>GD25LQ</code> means 1.8&nbsp;V (add a 1.8&nbsp;V adapter). The Programmer tab also flags the voltage from the chip ID.</li>
+          <li><b>NOR</b>: confirmed on EDM-041 as a 3.3&nbsp;V Winbond W25Q16JV next to the southbridge (see above). On other revisions, read the marking: <code>25Q16JV</code>/<code>W25Q…V</code> means 3.3&nbsp;V; <code>25U…</code>/<code>W25Q…W</code>/<code>GD25LQ</code> means 1.8&nbsp;V (add a 1.8&nbsp;V adapter). The Programmer tab also flags the voltage from the chip ID.</li>
           <li><b>UART</b>: look for a cluster of small round test pads near the southbridge on the underside. In standby (AC in, console off), <b>TX idles ≈3.3&nbsp;V</b>. RX is usually also pulled up. Check GND with continuity.</li>
           <li>Connect TX→RX and RX→TX with the adapter at 3.3&nbsp;V. If the line voltage drops sharply when you connect, stop and recheck the adapter and pads.</li>
           <li>The UART pad map is above. Other community maps exist on repair forums (e.g. TronicsFix "EDM-041 UART hook up"). Always confirm with a meter.</li>

@@ -209,6 +209,14 @@ mark{background:rgba(47,143,255,.35);color:#fff;border-radius:3px;padding:0 2px}
 .skurow{display:flex;gap:8px}
 .skurow input{flex:1;min-width:0}
 .skurow select{width:auto;flex:0 0 auto;max-width:46%}
+.restore{margin:0 0 14px;padding:12px 14px;border-radius:14px;border:1px solid rgba(47,143,255,.28);background:rgba(47,143,255,.06)}
+.restore b{font-size:13.5px}
+.rlist{display:grid;gap:4px;margin-top:12px}
+.rlist label{display:grid;grid-template-columns:18px 150px minmax(0,1fr);gap:8px;align-items:start;font-size:12.5px;padding:6px 8px;border-radius:8px;background:rgba(0,0,0,.2);cursor:pointer}
+.rlist label input{accent-color:var(--blue2);margin-top:2px}
+.rlist .rv{font-family:var(--mono);font-size:12px;color:#c5cede;overflow-wrap:anywhere}
+.rlist .rv s{color:var(--dim)}
+.rlist .same{opacity:.55}
 .proghead{min-height:34px;margin-bottom:14px}
 .prog{height:8px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden}
 .prog .bar{height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--blue2));border-radius:99px;transition:width .2s linear;box-shadow:0 0 14px var(--glow)}
@@ -364,6 +372,15 @@ h1,h2,h3{text-wrap:balance}
 
         <label class="check" style="margin:4px 0 16px"><input type="checkbox" id="chkAutoSuffix" checked> Flip SKU A/B suffix automatically when switching edition</label>
 
+        <div class="restore" id="restoreBox">
+          <div class="row" style="gap:10px">
+            <div style="flex:1;min-width:200px"><b>Restore identity from original dump</b><div class="hint" style="margin:2px 0 0">Using a donor NOR? Load your console's own original dump to copy its identity over in one step, exactly, with the LAN MAC check bytes included.</div></div>
+            <button class="btn sm" id="btnRestore">Choose original dump…</button>
+            <input type="file" id="restoreFile" accept=".bin,.BIN,application/octet-stream" hidden>
+          </div>
+          <div id="restoreList" class="hidden"></div>
+        </div>
+
         <details class="adv">
           <summary>Advanced: motherboard serial, MACs, OS flags <span class="tag blue" id="advCount" style="margin-left:6px;font-size:11px"></span></summary>
           <div class="banner" style="margin-top:12px"><span class="bi">⚠</span><div><b>Leave these alone unless you know why.</b> Serial, motherboard serial, WiFi and LAN MAC are paired with this console's hardware. OS flags change how the console boots.</div></div>
@@ -371,9 +388,10 @@ h1,h2,h3{text-wrap:balance}
           <input type="text" id="inMobo" class="mono" maxlength="16" spellcheck="false" autocomplete="off">
           <div class="row" style="gap:10px;margin-top:10px">
             <div style="flex:1;min-width:160px"><label class="f" for="inWifiMac">WiFi MAC (base; +1 and +2 follow)</label><input type="text" id="inWifiMac" class="mono" maxlength="17" spellcheck="false" autocomplete="off"></div>
-            <div style="flex:1;min-width:160px"><label class="f" for="inLanMac">LAN MAC</label><input type="text" id="inLanMac" class="mono" maxlength="17" spellcheck="false" autocomplete="off"></div>
+            <div style="flex:1;min-width:160px"><label class="f" for="inLanMac">LAN MAC (locked)</label><input type="text" id="inLanMac" class="mono" maxlength="17" spellcheck="false" autocomplete="off" readonly title="Use Restore identity from original dump"></div>
           </div>
           <div class="hint" id="advHint"></div>
+          <div class="hint">LAN MAC is locked: two check bytes at 0x1C403E go with it and can't be recalculated, so changing the MAC alone makes the console beep 3 times. Use <b>Restore identity from original dump</b> to bring over a MAC together with its check bytes.</div>
           <label class="f" style="margin-top:4px">OS flags (written to both NVS copies)</label>
           <div id="flagGrid" class="flaggrid"></div>
         </details>
@@ -1132,7 +1150,9 @@ const NOR = {
     strEdit('SKU', info.sku, edits.sku, 'SKU');
     if (edits.mobo!=null) strEdit('MB_SN', info.moboSerial, edits.mobo, 'Motherboard serial');
     const macBytes = m => m.replace(/[^0-9A-F]/gi,'').match(/../g).map(h=>parseInt(h,16));
-    if (edits.lanMac && edits.lanMac!==info.lanMac){ u8.set(macBytes(edits.lanMac), this.F.LAN_MAC.o); notes.push(`LAN MAC ${info.lanMac} → ${edits.lanMac}`); }
+    // raw byte ranges restored from the console's original dump (copied as-is, e.g. board ID + LAN MAC + check bytes)
+    for (const r of (edits.raw||[])){ let changed=false; for (let k=0;k<r.bytes.length;k++) if (u8[r.o+k]!==r.bytes[k]) { changed=true; break; }
+      if (changed){ u8.set(r.bytes, r.o); notes.push(`${r.label} restored from original`); } }
     if (edits.wifiMac && edits.wifiMac!==info.wifiMac){
       const base=macBytes(edits.wifiMac).reduce((v,b)=>v*256+b,0);
       this.WIFI_COPIES.forEach((o,i)=>u8.set(this.macBytesFromInt(base+i), o));
@@ -1173,7 +1193,7 @@ async function openNor(file){
   }
   const u8 = new Uint8Array(await file.arrayBuffer());
   nor.file=file; nor.u8=u8; nor.info=NOR.parse(u8);
-  nor.edits=freshEdits();
+  nor.edits=freshEdits(); restoreSrc=null; $('#restoreList').classList.add('hidden'); $('#restoreList').innerHTML='';
   $('#dropzone').classList.add('hidden'); $('#fileBar').classList.remove('hidden');
   $('#fileName').textContent=file.name;
   $('#fileMeta').textContent=`${u8.length.toLocaleString()} bytes · computing hashes…`;
@@ -1216,7 +1236,6 @@ function validate(){
   else if (i.sku && e.sku.length!==i.sku.length) errs.skuWarn=`Original "${i.sku}" is ${i.sku.length} characters, this is ${e.sku.length}. Check nothing was left off the end.`;
   const macOk = m => /^([0-9A-F]{2}:){5}[0-9A-F]{2}$/.test(m);
   if (e.mobo!==i.moboSerial && !/^[A-Z0-9]{1,16}$/.test(e.mobo)) errs.adv='Motherboard serial: letters/digits, max 16.';
-  if (e.lanMac!==i.lanMac && !macOk(e.lanMac)) errs.adv='LAN MAC must be 12 hex digits.';
   if (e.wifiMac!==i.wifiMac && !macOk(e.wifiMac)) errs.adv='WiFi MAC must be 12 hex digits.';
   return errs;
 }
@@ -1235,9 +1254,10 @@ function renderEdits(){
   $('#advHint').textContent = errs.adv||''; $('#advHint').classList.toggle('err',!!errs.adv);
   ['inMobo','inLanMac','inWifiMac'].forEach(id=>$('#'+id).classList.toggle('invalid', !!errs.adv && errs.adv.startsWith({inMobo:'Mother',inLanMac:'LAN',inWifiMac:'WiFi'}[id])));
   const flagsDirty = NOR.OS_FLAGS.some(f=>!i.flags[f.k].every(x=>NOR.flagLabel(f,x)===NOR.flagLabel(f,e.flags[f.k])));
-  const advDirty = e.mobo!==i.moboSerial || e.lanMac!==i.lanMac || e.wifiMac!==i.wifiMac || flagsDirty;
+  const advDirty = e.mobo!==i.moboSerial || e.wifiMac!==i.wifiMac || flagsDirty;
+  const rawDirty = (e.raw||[]).some(r=>r.bytes.some((v,k)=>nor.u8[r.o+k]!==v));
   $('#advCount').textContent = advDirty ? 'changed' : '';
-  const dirty = e.edition!==i.edition || e.serial!==i.serial || e.sku!==i.sku || advDirty;
+  const dirty = e.edition!==i.edition || e.serial!==i.serial || e.sku!==i.sku || advDirty || rawDirty;
   const anyErr = errs.serial||errs.sku||errs.adv;
   if (!dirty || anyErr){
     nor.result=null; $('#diffCard').classList.add('hidden');
@@ -1255,7 +1275,7 @@ function renderEdits(){
     return `<tr><td>${hx(d.start)}</td><td class="old">${hex(o,' ')}</td><td class="new">${hex(n,' ')}</td><td><span class="old">${esc(ascii(o))}</span> → <span class="new">${esc(ascii(n))}</span></td></tr>`;
   }).join('');
   const base=nor.file.name.replace(/\.bin$/i,'');
-  if (!$('#outName').dataset.touched) $('#outName').value = `${base}_${e.sku}_${e.edition}.bin`;
+  if (!$('#outName').dataset.touched) $('#outName').value = `${base}_${e.sku.replace(/\s+/g,'_')}_${e.edition}.bin`;
 }
 async function savePatched(){
   if (!nor.result) return toast('Nothing to save','Make a change first','warn');
@@ -1303,20 +1323,64 @@ $('#editionSeg').addEventListener('click',e=>{
 $('#inSerial').addEventListener('input',e=>{ const p=e.target.selectionStart; e.target.value=e.target.value.toUpperCase().replace(/\s/g,''); e.target.setSelectionRange(p,p); nor.edits.serial=e.target.value; renderEdits(); });
 $('#inSku').addEventListener('input',e=>{ const p=e.target.selectionStart; e.target.value=e.target.value.toUpperCase().replace(/\s+/g,' ').replace(/^ /,''); e.target.setSelectionRange(p,p); nor.edits.sku=e.target.value; renderEdits(); });
 $('#outName').addEventListener('input',e=>e.target.dataset.touched='1');
-function freshEdits(){ const i=nor.info; return { edition:i.edition, serial:i.serial, sku:i.sku, mobo:i.moboSerial, lanMac:i.lanMac, wifiMac:i.wifiMac, flags:Object.fromEntries(NOR.OS_FLAGS.map(f=>[f.k, i.flags[f.k][0]])) }; }
+function freshEdits(){ const i=nor.info; return { raw:[], edition:i.edition, serial:i.serial, sku:i.sku, mobo:i.moboSerial, lanMac:i.lanMac, wifiMac:i.wifiMac, flags:Object.fromEntries(NOR.OS_FLAGS.map(f=>[f.k, i.flags[f.k][0]])) }; }
 function buildAdvanced(){
   const i=nor.info;
   $('#inMobo').value=i.moboSerial; $('#inLanMac').value=i.lanMac; $('#inWifiMac').value=i.wifiMac;
   $('#flagGrid').innerHTML = NOR.OS_FLAGS.map(f=>{ const cur=i.flags[f.k][0], known=f.opts.some(o=>o[0]===cur);
     return `<div><label class="f" for="fl_${f.k}">${esc(f.name)}</label><select id="fl_${f.k}" data-flag="${f.k}">${(known?[]:[[cur,`Current (0x${cur.toString(16).toUpperCase().padStart(2,'0')})`]]).concat(f.opts).map(([v,l])=>`<option value="${v}" ${v===cur?'selected':''}>${esc(l)}</option>`).join('')}</select></div>`; }).join('');
 }
-$('#btnResetEdits').addEventListener('click',()=>{ nor.edits=freshEdits(); delete $('#outName').dataset.touched; $('#inSerial').value=nor.info.serial; $('#inSku').value=nor.info.sku; buildAdvanced(); renderEdits(); });
+$('#btnResetEdits').addEventListener('click',()=>{ nor.edits=freshEdits(); $('#restoreList').classList.add('hidden'); $('#restoreList').innerHTML=''; delete $('#outName').dataset.touched; $('#inSerial').value=nor.info.serial; $('#inSku').value=nor.info.sku; buildAdvanced(); renderEdits(); });
 const normMac = v => { const h=v.toUpperCase().replace(/[^0-9A-F]/g,''); return h.length===12 ? h.match(/../g).join(':') : v.toUpperCase(); };
 $('#inMobo').addEventListener('input',e=>{ e.target.value=e.target.value.toUpperCase().replace(/\s/g,''); nor.edits.mobo=e.target.value; renderEdits(); });
-['inLanMac','inWifiMac'].forEach(id=>$('#'+id).addEventListener('input',e=>{ nor.edits[id==='inLanMac'?'lanMac':'wifiMac']=normMac(e.target.value); renderEdits(); }));
+$('#inWifiMac').addEventListener('input',e=>{ nor.edits.wifiMac=normMac(e.target.value); renderEdits(); });
 $('#flagGrid').addEventListener('change',e=>{ const k=e.target.dataset.flag; if(k){ nor.edits.flags[k]=+e.target.value; renderEdits(); } });
 $('#btnSave').addEventListener('click',savePatched);
 document.addEventListener('click',e=>{ const c=e.target.closest('[data-copy]'); if(c) copy(c.dataset.copy); });
+
+/* ---------- restore identity from the console's original dump ---------- */
+const RESTORE_ITEMS = [
+  {k:'serial', label:'Serial', text:i=>i.serial},
+  {k:'mobo',   label:'Motherboard serial', text:i=>i.moboSerial},
+  {k:'sku',    label:'Model / SKU', text:i=>i.sku},
+  {k:'block',  label:'Board ID + LAN MAC + check bytes', raw:[0x1C4000,0x40], text:(i,u)=>`${hex(u.subarray(0x1C4000,0x1C4008),' ')} · ${i.lanMac} · check ${hex(u.subarray(0x1C403E,0x1C4040),' ')}`},
+  {k:'kiban',  label:'Kiban ID', raw:[NOR.F.KIBAN.o,16], text:i=>i.kiban||'—'},
+  {k:'wifi',   label:'WiFi MAC block', text:i=>i.wifiCopies.join(' · ')},
+];
+let restoreSrc=null;
+async function loadRestore(file){
+  if (!nor.u8 || !file) return;
+  const u=new Uint8Array(await file.arrayBuffer());
+  if (u.length!==nor.u8.length) return toast('Different size',`${file.name} is ${u.length.toLocaleString()} bytes; the loaded dump is ${nor.u8.length.toLocaleString()}.`,'err');
+  const oi=NOR.parse(u), fails=NOR.checks(u,oi).filter(c=>c[0]==='fail');
+  if (fails.length && !await confirmBox('Original dump has problems', `${file.name} fails: ${fails.map(f=>f[1]).join(', ')}. Only restore from it if you know these fields are still correct.`, 'Use it anyway', true)) return;
+  if (oi.edition!==nor.info.edition) toast('Different edition flag',`Original reads ${oi.edition}, loaded dump reads ${nor.info.edition}. Restore doesn't change the edition flag.`,'warn',7000);
+  restoreSrc={u, info:oi, name:file.name};
+  const ci=nor.info, cu=nor.u8;
+  $('#restoreList').innerHTML = `<div class="hint" style="margin:10px 0 0">From <b>${esc(file.name)}</b>. Tick what to copy, then Apply.</div><div class="rlist">` + RESTORE_ITEMS.map(it=>{
+    const from=it.text(oi,u), to=it.text(ci,cu), same = it.raw ? hex(u.subarray(it.raw[0],it.raw[0]+it.raw[1]))===hex(cu.subarray(it.raw[0],it.raw[0]+it.raw[1])) : from===to;
+    return `<label class="${same?'same':''}"><input type="checkbox" data-ri="${it.k}" ${same?'':'checked'}><span>${esc(it.label)}</span><span class="rv">${same?esc(from)+' (already matches)':`<s>${esc(to)}</s> → ${esc(from)}`}</span></label>`; }).join('') +
+    `</div><div class="row" style="margin-top:10px"><span class="spacer"></span><button class="btn sm ghost" id="btnRestoreCancel">Cancel</button><button class="btn sm primary" id="btnRestoreApply">Apply</button></div>`;
+  $('#restoreList').classList.remove('hidden');
+}
+function applyRestore(){
+  if (!restoreSrc) return;
+  const {u, info:oi}=restoreSrc, e=nor.edits, picked=new Set($$('#restoreList input[data-ri]:checked').map(c=>c.dataset.ri));
+  if (picked.has('serial')) e.serial=oi.serial;
+  if (picked.has('mobo'))   e.mobo=oi.moboSerial;
+  if (picked.has('sku'))    e.sku=oi.sku;
+  if (picked.has('wifi'))   e.wifiMac=oi.wifiMac;
+  e.raw=(e.raw||[]).filter(r=>!picked.has(r.k));
+  for (const it of RESTORE_ITEMS) if (it.raw && picked.has(it.k)) e.raw.push({k:it.k, o:it.raw[0], bytes:u.slice(it.raw[0],it.raw[0]+it.raw[1]), label:it.label});
+  $('#inSerial').value=e.serial; $('#inSku').value=e.sku; $('#inMobo').value=e.mobo; $('#inWifiMac').value=e.wifiMac;
+  if (picked.has('block')) $('#inLanMac').value=oi.lanMac;
+  $('#restoreList').classList.add('hidden');
+  renderEdits(); toast('Identity restored', `${picked.size} item(s) from ${restoreSrc.name}. Review the byte diff, then save.`, 'ok');
+  $('#diffCard').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth', block:'nearest'});
+}
+$('#btnRestore').addEventListener('click',()=>$('#restoreFile').click());
+$('#restoreFile').addEventListener('change',e=>{ const f=e.target.files[0]; e.target.value=''; if(f) loadRestore(f); });
+document.addEventListener('click',e=>{ if(e.target.id==='btnRestoreApply') applyRestore(); if(e.target.id==='btnRestoreCancel'){ $('#restoreList').classList.add('hidden'); } });
 
 /* ============================================================ Error DB */
 const SOURCES = [

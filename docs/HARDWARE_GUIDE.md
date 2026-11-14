@@ -15,6 +15,14 @@ Always read **twice** and compare. NOR Studio does this for you.
 
 ---
 
+## Rebuilding from a donor NOR
+
+Repair technicians report that a known-good donor dump from the **same board type** (same EDM revision and components) can bring back a console whose own NOR is lost or corrupted. Restoring the console's own identity afterwards keeps WiFi, controllers and the disc drive pairing happy.
+
+- Always try the console's **own** dump first if you have one that reads cleanly twice and passes the health check.
+- The LAN MAC at `0x1C4020` has **two check bytes at `0x1C403E`** that can't be recalculated. Changing the MAC without them makes the console beep 3 times. Copy the whole `0x1C4000–0x1C403F` block (board ID + LAN MAC + check) from the original dump as one unit.
+- In NOR Studio: open the donor dump → Edit → **Restore identity from original dump** → choose the console's original dump → Apply → review the diff → Save.
+
 ## Wiring a CH341A straight to the chip
 
 For soldered wires, a chip-off on a breakout, or when the clip won't fit. Every PS5 board covered here uses the same Winbond W25Q16JV, so the mapping is the same.

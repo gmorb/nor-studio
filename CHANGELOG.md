@@ -15,6 +15,9 @@
 - Error-code rows no longer overflow the screen on phones.
 - "Copied" notifications no longer flash the light bar, and at most 4 notifications stack at once.
 - The health check no longer warns "WiFi MAC copies differ" on healthy dumps. The three addresses at 0x1C73C0 are a consecutive block (base, +1, +2), not copies. The check now confirms they're sequential, and editing the WiFi MAC writes base, +1 and +2 instead of the same address three times.
+- **Restore identity from original dump**: when rebuilding from a donor NOR, load the console's own original dump and copy serial, motherboard serial, model number, Kiban ID, WiFi MAC block, and the board ID + LAN MAC + check-byte block in one step, exactly. A checklist shows old → new for each item before applying.
+- LAN MAC is no longer hand-editable. Two check bytes at 0x1C403E belong to it and can't be recalculated, and changing the MAC alone makes the console beep 3 times. Use Restore identity instead, which copies the MAC with its check bytes.
+- Saved file names replace spaces from Slim model numbers with underscores.
 - Model / SKU now has a real dropdown built from the loaded dump: the same series and format in every region, disc (A) and digital (B). It works for Slim model numbers like `CFI-2015 A01X` too. The old suggestion list only knew launch models and usually showed nothing.
 - Programmer: the Cancel button no longer touches the progress bar, and the speed readout no longer shows a stray "…".
 - Programmer: pressing Read or Write scrolls the Progress panel into view if it's off screen.

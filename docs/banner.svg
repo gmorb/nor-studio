@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="320" viewBox="0 0 1280 320">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0a0f1a"/><stop offset="1" stop-color="#05070c"/></linearGradient>
+    <radialGradient id="glow" cx="0.85" cy="0" r="0.8"><stop offset="0" stop-color="#0070d1" stop-opacity=".55"/><stop offset="1" stop-color="#0070d1" stop-opacity="0"/></radialGradient>
+    <radialGradient id="glow2" cx="0" cy="1.1" r="0.6"><stop offset="0" stop-color="#2f8fff" stop-opacity=".25"/><stop offset="1" stop-color="#2f8fff" stop-opacity="0"/></radialGradient>
+    <pattern id="pat" width="120" height="120" patternUnits="userSpaceOnUse">
+      <g fill="none" stroke="#fff" stroke-opacity=".05" stroke-width="2">
+        <path d="M22 14l9 15H13z"/><circle cx="90" cy="22" r="8"/><path d="M16 84l14 14M30 84L16 98"/><rect x="82" y="82" width="15" height="15"/>
+      </g>
+    </pattern>
+  </defs>
+  <rect width="1280" height="320" rx="24" fill="url(#bg)"/>
+  <rect width="1280" height="320" rx="24" fill="url(#pat)"/>
+  <rect width="1280" height="320" rx="24" fill="url(#glow)"/>
+  <rect width="1280" height="320" rx="24" fill="url(#glow2)"/>
+  <g transform="translate(96,96)">
+    <rect width="128" height="128" rx="36" fill="#141c2e" stroke="#ffffff" stroke-opacity=".15" stroke-width="2"/>
+    <g fill="none" stroke-width="5" stroke-linejoin="round">
+      <path d="M40 24l16 28H24z" stroke="#3ed9a7"/>
+      <circle cx="88" cy="40" r="15" stroke="#ff5c7a"/>
+      <path d="M26 76l28 28M54 76l-28 28" stroke="#7fa8ff" stroke-linecap="round"/>
+      <rect x="74" y="76" width="28" height="28" rx="2" stroke="#f290d6"/>
+    </g>
+  </g>
+  <text x="264" y="160" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="68" font-weight="700" fill="#ffffff">NOR Studio</text>
+  <text x="266" y="206" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="26" fill="#a9b4c8">PS5 NOR editor · CH341A programmer · UART diagnostics</text>
+  <g font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="17" font-weight="600">
+    <rect x="266" y="232" width="158" height="34" rx="17" fill="#2f8fff" fill-opacity=".16"/><text x="345" y="255" text-anchor="middle" fill="#8fc0ff">Runs in browser</text>
+    <rect x="436" y="232" width="138" height="34" rx="17" fill="#3ddc97" fill-opacity=".14"/><text x="505" y="255" text-anchor="middle" fill="#3ddc97">No install</text>
+    <rect x="586" y="232" width="180" height="34" rx="17" fill="#f290d6" fill-opacity=".14"/><text x="676" y="255" text-anchor="middle" fill="#f6b3e3">Verified writes</text>
+  </g>
+  <text x="1184" y="290" text-anchor="end" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#5d6779">by The Goat Tech</text>
+</svg>

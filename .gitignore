@@ -1,0 +1,18 @@
+# Never commit console dumps, backups or Sony documentation
+*.bin
+*.BIN
+*.pcb
+*.bvr
+*.brd
+*service-manual*.pdf
+*schematic*.pdf
+backup_*
+chip-read_*
+chip-written_*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+node_modules/

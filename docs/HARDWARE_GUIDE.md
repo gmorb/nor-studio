@@ -105,7 +105,7 @@ The right‑hand column is **GND / TX / RX** from top to bottom. That matches th
 1. AC unplugged. Wait a minute for the rails to discharge.
 2. Clip on IC5001, pin 1 to pin 1. 3.3 V‑modded CH341A.
 3. If the ID or the reads are unstable, connect JL5110 to GND for the duration.
-4. **Programmer** tab → expect `EF 40 15` → Read (read twice) → Save backup → Edit → Write.
+4. **Programmer** tab → expect `EF 40 15` → Read (read twice) → Save backup → Edit → Write. Write asks whether to read first (recommended) or write without reading.
 
 ---
 

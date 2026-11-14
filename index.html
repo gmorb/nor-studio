@@ -941,7 +941,7 @@ h1,h2,h3{text-wrap:balance}
     <h3>CH341A programmer setup</h3>
     <p><b>Windows:</b> browsers can only talk to the CH341A through the generic WinUSB driver. Do this once: download <b>Zadig</b> (zadig.akeo.ie), plug in the CH341A, choose <i>Options → List All Devices</i>, select the CH341A entry (USB ID <code>1A86 5512</code>, often shown as "USB-EPP/I2C… CH341A"), pick <b>WinUSB</b> and click <i>Replace Driver</i>. Replug it. Note: NeoProgrammer needs the original CH341PAR driver — to go back, uninstall the device in Device Manager (tick "delete the driver") and reinstall CH341PAR.</p>
     <p><b>Linux:</b> add <code>SUBSYSTEM=="usb", ATTR{idVendor}=="1a86", ATTR{idProduct}=="5512", MODE="0666"</code> to <code>/etc/udev/rules.d/99-ch341a.rules</code>, then <code>sudo udevadm control --reload</code> and replug. <b>macOS:</b> works as-is.</p>
-    <p><b>Workflow:</b> Programmer tab → Connect → check the detected chip and voltage → Read chip (it lands in the NOR Editor) → Save backup → edit in the NOR Editor → back to Programmer → Write to chip. Writing re-reads the chip, saves a backup automatically, rewrites only the changed 4&nbsp;KB sectors and verifies.</p>
+    <p><b>Workflow:</b> Programmer tab → Connect → check the detected chip and voltage → Read chip (it lands in the NOR Editor) → Save backup → edit in the NOR Editor → back to Programmer → Write to chip. Write asks how to proceed: <b>Read first</b> (recommended) saves a backup and rewrites only the changed 4&nbsp;KB sectors; <b>Write without reading</b> erases and rewrites the whole chip with no backup, after a warning. Both verify afterwards.</p>
     <p><b>Other programmers:</b> XGecu T76 — read/write with Xgpro and open the .bin here for editing. The FT232R is a UART adapter (set its jumper to 3.3&nbsp;V) — use it in the UART tab.</p>
     <h3>UART adapter driver</h3>
     <p>If your adapter doesn't appear in the port picker, install its USB-serial driver (CH340/CH341, CP210x or FTDI) and replug it.</p>
@@ -981,6 +981,18 @@ function toast(title, msg='', kind='info', ms=4200){
   const t = document.createElement('div'); t.className = 'toast '+kind;
   t.innerHTML = `<div><b>${esc(title)}</b>${msg?`<span style="color:var(--muted)">${esc(msg)}</span>`:''}</div>`;
   const box=$('#toasts'); box.appendChild(t); while (box.childElementCount>4) box.firstElementChild.remove(); setTimeout(()=>{ t.style.transition='opacity .15s ease-out, transform .15s ease-out'; t.style.opacity='0'; t.style.transform='translateY(4px)'; setTimeout(()=>t.remove(),160); }, ms);
+}
+function choiceBox(title, html, buttons){
+  return new Promise(res => {
+    const bg=document.createElement('div'); bg.className='modal-bg';
+    bg.innerHTML=`<div class="modal" role="dialog" aria-modal="true" style="width:min(520px,92vw)"><h3>${esc(title)}</h3><div class="vwarn">${html}</div>
+      <div class="row" style="margin-top:18px;justify-content:flex-end">${buttons.map(b=>`<button class="btn ${b.cls||''}" data-c="${b.id}">${esc(b.label)}</button>`).join('')}</div></div>`;
+    const done=v=>{ bg.remove(); document.removeEventListener('keydown',kd); res(v); };
+    const kd=e=>{ if(e.key==='Escape') done(null); };
+    bg.addEventListener('click',e=>{ if(e.target===bg) done(null); const c=e.target.closest('[data-c]')?.dataset.c; if(c) done(c==='cancel'?null:c); });
+    document.addEventListener('keydown',kd); document.body.appendChild(bg);
+    (bg.querySelector('.btn.primary')||bg.querySelector('[data-c]')).focus();
+  });
 }
 function confirmBox(title, msg, okLabel='Continue', danger=false){
   return new Promise(res => {
@@ -1936,7 +1948,7 @@ function renderWriteGates(){
     const fails=NOR.checks(img, NOR.parse(img)).filter(c=>c[0]==='fail');
     g.push(fails.length ? ['fail','Image fails the health check', fails.map(f=>f[1]).join(', ')] : ['pass','Image passes the health check']);
   } else g.push(['fail','No image loaded']);
-  g.push(prog.lastRead ? ['pass','Chip has been read this session', 'A backup is saved automatically before writing'] : ['warnl','Chip not read yet','Writing reads it first and saves a backup automatically']);
+  g.push(prog.lastRead ? ['pass','Chip has been read this session', 'Write asks: read first (backup + only changed sectors) or write without reading'] : ['warnl','Chip not read yet','Write asks: read first (recommended, saves a backup) or write without reading']);
   $('#writeGates').innerHTML = g.map(([k,t,s])=>`<li class="${k}"><span class="ic">${k==='pass'?'✓':k==='fail'?'✕':'!'}</span><div>${esc(t)}${s?`<small>${esc(s)}</small>`:''}</div></li>`).join('');
   $('#btnChipWrite').disabled = prog.busy || g.some(x=>x[0]==='fail');
 }
@@ -2023,14 +2035,33 @@ const stamp = () => new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
 function saveBackup(data=prog.lastRead){
   if (!data) return; const n=`backup_${NOR.parse(data).serial||'unknown'}_${stamp()}.bin`; download(n, data); prog.backupSaved=true; flog('sys','Backup saved: '+n);
 }
-function writeChip(){ return runOp(async()=>{
+async function writeChip(){
+  if (prog.busy) return;
+  const fname0=nor.file?.name||'this file';
+  const mode = await choiceBox('Write to chip', `
+    <p><b>Read first</b> (recommended) saves a backup of what's on the chip now, checks the file belongs to this console, and rewrites only the sectors that changed.</p>
+    <p><b>Write without reading</b> skips straight to erasing and rewriting the whole chip with "${esc(fname0)}".</p>`,
+    [{id:'cancel',label:'Cancel',cls:'ghost'},{id:'blind',label:'Write without reading',cls:'danger'},{id:'read',label:'Read first',cls:'primary'}]);
+  if (!mode) return flog('sys','Write cancelled.');
+  if (mode==='blind'){
+    const ok = await choiceBox('Write without reading?', `
+      <p>You're about to write <b>without reading the chip first</b>.</p>
+      <p class="vsub">• No backup of the chip's current contents will be saved, so if this file is wrong, there's nothing to roll back to.<br>• The app can't check that "${esc(fname0)}" belongs to this console (serial / MAC).<br>• All ${prog.size/4096} sectors (${prog.size/1048576} MB) will be erased and rewritten, then verified.</p>`,
+      [{id:'cancel',label:'Cancel',cls:'ghost'},{id:'go',label:'Continue without reading',cls:'danger'}]);
+    if (!ok) return flog('sys','Write cancelled.');
+  }
+  return runOp(async()=>{
   const img=writeImage().slice(), imgInfo=NOR.parse(img), fname=nor.file.name;
+  const SEC=4096; let changed=[];
   showProgress();
+  if (mode==='blind'){
+    flog('ng','Writing without reading: no backup of the chip\'s current contents.');
+    for (let s=0; s<prog.size; s+=SEC) changed.push(s);
+  } else {
   flog('tx','Reading current chip contents…');
   const cur=await readAll('Reading current contents'), curInfo=NOR.parse(cur);
   if (!prog.backupSaved || !prog.lastRead || firstDiff(prog.lastRead,cur)>=0){ saveBackup(cur); }
   prog.lastRead=cur;
-  const SEC=4096, changed=[];
   for (let s=0; s<prog.size; s+=SEC){ for (let i=s;i<s+SEC;i++) if (cur[i]!==img[i]) { changed.push(s); break; } }
   if (!changed.length){ progDone('Chip already matches this image'); flog('ok','Nothing to write — chip already matches.'); return toast('Nothing to write','The chip already contains this exact image.','ok'); }
   const warn=[];
@@ -2040,11 +2071,12 @@ function writeChip(){ return runOp(async()=>{
   const msg=`${changed.length} of ${prog.size/SEC} sectors (${changed.length*4} KB) will be erased and rewritten from "${fname}". A backup of the current chip was just saved.` + (warn.length?'\n\n⚠ '+warn.join('\n⚠ '):'');
   if (!await confirmBox(warn.length?'Write anyway?':'Write to chip?', msg, warn.length?'Write anyway':'Write', true)) { progDone('Write cancelled', false); return flog('sys','Write cancelled.'); }
   showProgress();
+  }
   prog.cancel=false;
   const st=await prog.flash.unprotect(); flog('sys',`Status register ${hx(st,2)} — unlocked`);
   let done=0; const total=changed.length*SEC;
   for (const s of changed){
-    if (prog.cancel && await confirmBox('Stop writing?','The chip will be left partly written. You can write again or restore the backup.','Stop',true)) throw new Error('Cancelled');
+    if (prog.cancel && await confirmBox('Stop writing?', mode==='blind' ? 'The chip will be left partly written. Write again before powering the console.' : 'The chip will be left partly written. You can write again or restore the backup.','Stop',true)) throw new Error('Cancelled');
     prog.cancel=false;
     await prog.flash.eraseSector(s);
     for (let p=s; p<s+SEC; p+=256){ const page=img.subarray(p,p+256); if (!page.every(x=>x===0xFF)) await prog.flash.program(p, page); }

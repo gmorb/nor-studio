@@ -15,6 +15,7 @@
 - Error-code rows no longer overflow the screen on phones.
 - "Copied" notifications no longer flash the light bar, and at most 4 notifications stack at once.
 - The health check no longer warns "WiFi MAC copies differ" on healthy dumps. The three addresses at 0x1C73C0 are a consecutive block (base, +1, +2), not copies. The check now confirms they're sequential, and editing the WiFi MAC writes base, +1 and +2 instead of the same address three times.
+- **Write without reading**: Write to chip now asks whether to read first (recommended: saves a backup and rewrites only changed sectors) or write without reading. Choosing the latter shows a warning (no backup, no serial/MAC check against the chip, all 512 sectors rewritten) with Continue / Cancel. Both paths verify the whole chip afterwards.
 - **Restore identity from original dump**: when rebuilding from a donor NOR, load the console's own original dump and copy serial, motherboard serial, model number, Kiban ID, WiFi MAC block, and the board ID + LAN MAC + check-byte block in one step, exactly. A checklist shows old → new for each item before applying.
 - LAN MAC is no longer hand-editable. Two check bytes at 0x1C403E belong to it and can't be recalculated, and changing the MAC alone makes the console beep 3 times. Use Restore identity instead, which copies the MAC with its check bytes.
 - Saved file names replace spaces from Slim model numbers with underscores.

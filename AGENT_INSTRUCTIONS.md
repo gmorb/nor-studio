@@ -62,6 +62,11 @@ gh release create v1.2.0 nor-studio.html -R OWNER/REPO \
 rm nor-studio.html
 ```
 
+## 4b. Social preview image
+
+GitHub has no API for this, so tell the owner to do it by hand (or do it yourself if you have browser access to their account):
+Repository → **Settings** → **General** → **Social preview** → **Edit** → **Upload an image** → choose `docs/social-preview.png` (1280×640).
+
 ## 5. Final checks (report the results to the owner)
 
 - [ ] README renders on GitHub with the banner, badges and all 5 screenshots (no broken images).
@@ -69,6 +74,7 @@ rm nor-studio.html
 - [ ] The live page opens. **Programmer → Demo mode → Read chip** works, and **UART → Demo mode → Read error codes** shows decoded codes.
 - [ ] The Help tab and footer show the credits: *based on PS5 NOR Modifier by TheCod3r (GPL-2.0), rebuilt with AI assistance, improvements/features/ideas by The Goat Tech*.
 - [ ] `LICENSE` is GPL-2.0 and `NOTICE.md` is present.
+- [ ] Social preview set to `docs/social-preview.png` (or the owner was told how to set it).
 - [ ] No `.bin`, `.pcb` or service-manual PDFs are in the repo (`git ls-files | grep -Ei '\.(bin|pcb|pdf)$'` returns nothing).
 
 Send the owner: the repo URL, the Pages URL and the release URL.

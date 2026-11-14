@@ -16,6 +16,7 @@
 - "Copied" notifications no longer flash the light bar, and at most 4 notifications stack at once.
 
 ### Hardware guide
+- New "CH341A wiring" guide: direct wiring from the programmer header to the chip (MISO→DO, MOSI→DI), alias names, chip-ID troubleshooting, and when to leave the 3.3 V wire off (powered-board method).
 - EDM‑041 NOR confirmed: Winbond W25Q16JV (3.3 V, SOIC‑8) next to the southbridge, with location and pinout diagram and board photos.
 - The empty tag next to "Advanced" in the NOR editor no longer shows.
 

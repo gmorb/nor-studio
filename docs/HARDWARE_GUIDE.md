@@ -15,6 +15,30 @@ Always read **twice** and compare. NOR Studio does this for you.
 
 ---
 
+## Wiring a CH341A straight to the chip
+
+For soldered wires, a chip-off on a breakout, or when the clip won't fit. Every PS5 board covered here uses the same Winbond W25Q16JV, so the mapping is the same.
+
+| CH341A label | Flash pin | Why |
+|---|---|---|
+| CS | **1** /CS | Chip select |
+| MISO | **2** DO / SO | Data from the chip *out* to the programmer *in* |
+| MOSI | **5** DI / SI | Data from the programmer *out* to the chip *in* |
+| CLK | **6** CLK | Also printed SCK / SCLK |
+| GND | **4** GND | Connect first |
+| VCC 3.3 V | **8** VCC | **Only when the board is unplugged**; leave it off on a powered board |
+
+**Why the names don't match:** SPI is named from the programmer's side. MISO ("master in, slave out") goes to the chip's output DO; MOSI ("master out, slave in") goes to the chip's input DI. Don't cross them like UART's TX→RX. Aliases: DO = SO = IO1 = Q · DI = SI = IO0 = D · CS = CE# = SS · CLK = SCK = SCLK. If your programmer prints DO/DI instead of MISO/MOSI, wire it one way and check the chip ID. If it reads `FF FF FF` or `00 00 00`, swap those two wires.
+
+**/WP (pin 3) and /HOLD (pin 7):** pulled up on the board, so leave them alone in-circuit. On a chip-off, tie both to VCC.
+
+### Two ways to power the chip
+
+- **Recommended: board unplugged, programmer powers the chip.** Connect all six wires. If reads are unstable, ground JL5110 (/SSB_RESET) on EDM-010/020, or lift pin 8, or remove the chip. This is the only method for EDM-03x/04x.
+- **Advanced: board powered in standby, programmer doesn't.** Connect CS, MISO, MOSI, CLK and GND only. **Never connect the programmer's 3.3 V wire here**: two supplies on one rail can damage the programmer, the chip or the board. In standby the southbridge also drives the SPI lines, so it **must be held in reset** (JL5110 to GND on EDM-010/020) or reads garble and writes can corrupt the NOR. Not for EDM-03x/04x until a reset point is known.
+
+**Check with the app:** `EF 40 15` = correct. `FF FF FF` = check MISO→2 and CS→1. `00 00 00` = no power or GND, or MOSI/MISO swapped. Changing or odd IDs = loose wire or clock; shorten wires and re-solder CLK→6.
+
 ## EDM‑010 / EDM‑020 (CFI‑10xx / 11xx)
 
 Source: Sony board service manuals for the CFI‑1000/1100 series (schematic sheets "SFlash 2MB" and "MISC", printed wiring boards side A and side B).

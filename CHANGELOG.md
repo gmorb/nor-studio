@@ -3,6 +3,11 @@
 ## v1.2.0
 
 ### Added
+- **3 beeps troubleshooter** in the Hardware Guide tab: the order to check things in when a console beeps three times on plug-in, the EDM-041 case it came from, how to vet a donor dump, and how to put your own identity back.
+- The NOR Editor health check reads the dump's own error log. A donor whose log shows APU, power-sequence or thermal faults gets a warning, so you know that console was faulty and that those codes aren't yours.
+- Health check for the identity header byte at 0x1C4000. It's 0x30 in every known-good dump. A different value usually means the chip was failing when the dump was read, and a NOR carrying it gives 3 beeps as soon as the console is plugged in. Found while reviving an EDM-041: its own backup had 0x00 there, and fixing that one byte made it boot with its own identity.
+- Restore identity keeps 0x30 when the source dump has a corrupted header byte, and says so.
+- UART codes that are already stored in the dump loaded in the NOR Editor are tagged "In loaded dump", with a note. After writing a donor dump, its previous owner's error history comes with it and is easy to mistake for this console's.
 - **Wiring check** for the CH341A. When the chip ID fails, the app re-reads it, tries waking the chip from power-down, and says what the reading means (stuck high, stuck low, shifted by one bit, or changing between reads). "Find the bad connection" then tests each wire: GND and VCC with a multimeter, CS/CLK/MOSI by switching each pin high and low while you measure the chip's leg, and MISO live while you briefly bridge pin 2 to GND. It ends by naming the broken connection.
 - The wiring check also measures HOLD (pin 7) and WP (pin 3). A low HOLD pin makes the chip ignore everything and read FF FF FF even with perfect wiring; a low WP pin blocks writes.
 - Garbled IDs from an unknown maker are now diagnosed instead of being accepted as a chip.

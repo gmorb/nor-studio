@@ -17,6 +17,8 @@ Always read **twice** and compare. NOR Studio does this for you.
 
 ## Rebuilding from a donor NOR
 
+> **If the rebuilt NOR still gives 3 beeps on plug-in:** check the health check for "Identity block starts with … instead of 0x30". A backup read from a dying chip can have a corrupted byte at 0x1C4000. Restore identity now keeps 0x30, but rebuilds made before this fix may carry the bad byte. Also remember the error log is stored on the NOR: after writing a donor dump, the codes you read are the donor's until you clear the log.
+
 Repair technicians report that a known-good donor dump from the **same board type** (same EDM revision and components) can bring back a console whose own NOR is lost or corrupted. Restoring the console's own identity afterwards keeps WiFi, controllers and the disc drive pairing happy.
 
 - Always try the console's **own** dump first if you have one that reads cleanly twice and passes the health check.
@@ -154,3 +156,28 @@ No official schematic or boardview is included here. Pinouts from launch boards 
 - Community pad maps exist on repair forums. Use them as a starting point and verify them.
 - Slim dumps are 2 MB. NOR Studio reads and edits serial/SKU, but disables Disc ↔ Digital switching for them. Two real EDM‑041 dumps, one disc (`CFI-2015 A01X`) and one digital (`CFI-2015 B01X`), both carry the same edition flag `22 01 01 01` at 0x1C7010. On Slims only the model number's A/B letter differs.
 - Real EDM‑041 dumps verified field by field: serial, motherboard serial, SKU, board, LAN MAC, wireless MAC block (base, +1, +2), Kiban ID, firmware, OS flags, EAP magics and the SLB2 containers all parse correctly. Note that the +0x3000 backup area is empty (FF) on these Slim dumps.
+
+
+## 3 beeps as soon as it's plugged in
+
+The southbridge checks the NOR before anything else powers up. When it doesn't like what it finds, it beeps three times and stops. Work through these in order:
+
+1. **Connect UART and plug in.** If `$$ [MANU] UART CMD READY` appears, the southbridge is running and reading the NOR, so the problem is the NOR's contents. No banner at all points to a missing or dead NOR, or the southbridge.
+2. **Read the codes, then clear the log.** Clear log, unplug for 10 seconds, plug back in without pressing power. A full log can cause the beeps on its own.
+3. **Written a donor dump? Those codes aren't yours.** The error log is stored on the NOR, so the donor's history comes with it. NOR Studio tags those entries "In loaded dump" when the same dump is open in the NOR Editor.
+4. **Check the dump in the NOR Editor.** Look for "Identity block starts with … instead of 0x30". A backup read from a failing chip can have a bad byte there.
+5. **Rebuild with Restore identity**, not by editing fields one at a time. The LAN MAC has two check bytes after it.
+6. **Read the chip back in-circuit and Compare** with the file you wrote, to rule out soldering and the write.
+7. **Beeps only when you press power?** Different fault: check the power/eject button board's flex cable first.
+
+**The case this came from (EDM-041 Slim):** the NOR chip died. A new chip with the console's own backup still beeped, and so did a donor dump with the console's identity restored. Writing the donor unmodified booted, which proved the board was fine; every UART code had come with the donor dump. The console's own backup had `00` at 0x1C4000 instead of `30`, corrupted by the dying chip. Donor dump + own identity + `30` booted on the console's own serial and MACs.
+
+### Finding and vetting a donor dump
+
+NOR Studio doesn't host dumps: every dump contains Sony's firmware and another console's serial, MACs and keys. Repair forums share them in their firmware threads (for example BadCaps and TronicsFix). Before using one:
+
+- Same board family: Slim for Slim (EDM-04x), launch for launch (EDM-010/020), EDM-03x for EDM-03x.
+- Open it in the NOR Editor: no failed checks, identity header 0x30.
+- Read its error log in the health check. APU, power or thermal faults mean that console was faulty. The data can still be fine, but a clean log is safer.
+- Keep an untouched copy, so you can tell a bad board from a bad rebuild.
+- Put your own identity back with **Restore identity** before you use the console. A donor written as-is shares its serial and MACs with another console, and anything tied to that serial (a PSN ban, for example) applies to both.

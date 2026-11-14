@@ -627,7 +627,7 @@ h1,h2,h3{text-wrap:balance}
   <div class="card" style="margin-bottom:18px">
     <div class="row">
       <h2>Hardware guide</h2><span class="spacer"></span>
-      <div class="seg" id="boardSeg"><button data-b="b12" class="on">EDM-010 / 020 (launch)</button><button data-b="b3">EDM-03x</button><button data-b="b4">EDM-04x+ (Slim)</button><button data-b="wire">CH341A wiring</button></div>
+      <div class="seg" id="boardSeg"><button data-b="b12" class="on">EDM-010 / 020 (launch)</button><button data-b="b3">EDM-03x</button><button data-b="b4">EDM-04x+ (Slim)</button><button data-b="wire">CH341A wiring</button><button data-b="beeps">3 beeps</button></div>
     </div>
     <p class="sub" style="margin-top:6px">Where the NOR and UART points are, how to wire them, and whether you need to remove the chip. EDM-010/020 details come from Sony's board service manuals (CFI-1000/1100 series). Always confirm with a multimeter before connecting anything.</p>
   </div>
@@ -948,6 +948,55 @@ h1,h2,h3{text-wrap:balance}
       </div>
     </div>
   </div>
+  <!-- ===== 3 beeps troubleshooter ===== -->
+  <div id="guide-beeps" class="hidden">
+    <div class="grid g2">
+      <div class="card">
+        <h2>3 beeps as soon as it's plugged in</h2>
+        <p class="sub">The southbridge checks the NOR before anything else powers up. When it doesn't like what it finds, it beeps three times and stops. Work through these in order.</p>
+        <ol class="steps">
+          <li><b>Connect UART and plug in.</b> If <code>$$ [MANU] UART CMD READY</code> appears, the southbridge is running and reading the NOR, so the problem is the NOR's contents. No banner at all points to a missing or dead NOR, or the southbridge.</li>
+          <li><b>Read the codes, then clear the log.</b> Press <b>Clear log</b>, unplug for 10 seconds and plug back in without pressing power. A full log can cause the beeps on its own.</li>
+          <li><b>Written a donor dump? Those codes aren't yours.</b> The error log lives on the NOR, so the donor's history comes with it. The UART tab tags those entries <span class="tag gray">In loaded dump</span> when the same dump is open in the NOR Editor.</li>
+          <li><b>Check the dump in the NOR Editor.</b> Look for "Identity block starts with … instead of 0x30". A backup read from a failing chip can have a bad byte there, and a NOR carrying it beeps 3 times. Restore identity keeps 0x30 for you.</li>
+          <li><b>Rebuild with Restore identity,</b> not by editing fields one at a time. The LAN MAC has two check bytes after it, and changing the MAC without them also gives 3 beeps.</li>
+          <li><b>Read the chip back while it's on the board</b> and use <b>Compare</b> against the file you wrote. A perfect match rules out the soldering and the write.</li>
+          <li><b>Beeps only when you press power?</b> That's a different fault. Check the power/eject button board's flex cable first.</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h2>Fixed: EDM-041 Slim</h2>
+        <p class="sub">The case this troubleshooter came from.</p>
+        <ul class="checks" style="margin-top:10px">
+          <li class="fail"><span class="ic">✕</span><div>3 beeps on plug-in, UART banner present, no new codes<small>The NOR chip had died. A new chip with the console's own backup still beeped, and so did a donor dump with the console's identity copied in.</small></div></li>
+          <li class="warnl"><span class="ic">!</span><div>The donor dump unmodified booted<small>That proved the board was fine. The codes on UART had all come with the donor dump, not from this console.</small></div></li>
+          <li class="pass"><span class="ic">✓</span><div>One corrupted byte in the backup<small>The console's own backup had 0x00 at 0x1C4000 instead of 0x30, read from the dying chip. Donor dump + own identity + 0x30 booted on the console's own serial and MACs.</small></div></li>
+        </ul>
+      </div>
+    </div>
+    <div class="grid g2" style="margin-top:18px">
+      <div class="card">
+        <h2>Finding a donor dump</h2>
+        <p class="sub">NOR Studio doesn't host dumps. Every dump contains Sony's firmware and another console's serial, MACs and keys. Repair forums share them in their firmware threads, for example BadCaps and TronicsFix.</p>
+        <ul class="checks" style="margin-top:10px">
+          <li class="pass"><span class="ic">✓</span><div>Same board family<small>Slim for Slim (EDM-04x), launch for launch (EDM-010/020), EDM-03x for EDM-03x. Same edition is easiest.</small></div></li>
+          <li class="pass"><span class="ic">✓</span><div>Clean health check<small>Open it in the NOR Editor. No failed checks, and the identity header reads 0x30.</small></div></li>
+          <li class="pass"><span class="ic">✓</span><div>Look at its error log<small>The health check reads the donor's error log. APU, power or thermal faults mean that console was sick. The data may still be fine, but a clean log is a safer bet.</small></div></li>
+          <li class="pass"><span class="ic">✓</span><div>Keep an untouched copy<small>If a rebuild beeps, writing the donor as-is tells you whether the board or the rebuild is the problem.</small></div></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>Put your own identity back</h2>
+        <p class="sub">A donor dump written as-is makes your console that other console: same serial, same MACs. Anything tied to that serial, like a PSN ban, applies to both, and two consoles online with one identity cause trouble.</p>
+        <ol class="steps">
+          <li>Open the donor dump in the NOR Editor.</li>
+          <li>Press <b>Restore identity</b> and pick your console's own backup.</li>
+          <li>Apply, check the byte diff, save and write.</li>
+          <li>No backup of your own? The serial and model are on the console's label. The MACs and console keys can't be recovered without a dump.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- ================= HELP ================= -->
@@ -1127,6 +1176,16 @@ const NOR = {
       flags: Object.fromEntries(this.OS_FLAGS.map(f=>[f.k, this.OS_BASES.map(b=>u8[b+f.off])])),
     };
   },
+  /* error log stored in NVS: 32-byte records from 0x1C5100 (mirror at 0x1CE100), same fields the UART errlog command returns */
+  errlog(u8){
+    const out=[], h=(o,n)=>{ let v=0; for(let i=n-1;i>=0;i--) v=v*256+u8[o+i]; return v.toString(16).toUpperCase().padStart(n*2,'0'); };
+    for (let a=0x1C5100; a<0x1C5900; a+=32){
+      if (u8[a]===0xFF&&u8[a+1]===0xFF&&u8[a+2]===0xFF&&u8[a+3]===0xFF) break;
+      const code=h(a,4); if (!/^[89A-F]/.test(code)) continue;
+      out.push({code, raw:`OK 00000000 ${code} ${h(a+4,4)} ${h(a+8,4)} ${h(a+12,4)} ${h(a+16,2)} ${h(a+18,2)} ${h(a+20,2)} ${h(a+22,2)}`});
+    }
+    return out;
+  },
   checks(u8, info){
     const out=[], at=(o,s)=>ascii(u8.subarray(o,o+s.length))===s;
     out.push(u8.length===this.SIZE ? ['pass','Size is 2 MB'] : ['fail','Unexpected size', `${u8.length.toLocaleString()} bytes — expected 2,097,152`]);
@@ -1137,6 +1196,13 @@ const NOR = {
     out.push(mbr===2?['pass','Both MBR copies present']:[mbr?'warnl':'fail', `${mbr}/2 MBR copies present`]);
     const eap=[0x1C75FC,0x1C81FC,0x1CB1FC].filter(o=>u8[o]===0xE5&&u8[o+1]===0xE5&&u8[o+2]===0xE5&&u8[o+3]===0x01).length;
     out.push(eap===3?['pass','EAP key magics intact']:['warnl',`${eap}/3 EAP key magics found`,'Could indicate a corrupted NVS area']);
+    out.push(u8[0x1C4000]===0x30 ? ['pass','Identity block header reads 0x30']
+      : ['warnl',`Identity block starts with ${hx(u8[0x1C4000],2)} instead of 0x30`,'Byte 0x1C4000 is 0x30 in every known-good dump. Any other value usually means the chip was failing when this was read, and the console gives 3 beeps as soon as it\'s plugged in. Restore identity keeps 0x30 when copying from a dump like this.']);
+    { const log=this.errlog(u8), SERIOUS=/APU|Power Seq|Short|Thermal|Overheat|GDDR|DDR|Not Responding|Power Failure|Storage|SSD|Fuse/i;
+      const bad=new Map(); for (const e of log){ const d=(typeof lookup==='function'?lookup(e.code).desc:'')||''; if ((SERIOUS.test(d)&&!/^Known Unknown/i.test(d))||(!d&&/^(C002|808D|8081|C00C)/.test(e.code))) bad.set(e.code,{d,n:(bad.get(e.code)?.n||0)+1}); }
+      if (!log.length) out.push(['pass','Error log is empty']);
+      else if (!bad.size) out.push(['pass',`Error log: ${log.length} entr${log.length===1?'y':'ies'}, none point to hardware faults`,'These were logged by the console this dump came from. If you write it to another console, its UART tab shows them until you clear the log.']);
+      else out.push(['warnl',`Error log shows hardware faults (${log.length} entries)`,`${[...bad].slice(0,4).map(([c,v])=>`${c} ×${v.n}${v.d?': '+(t=>t.length>60?t.slice(0,58).replace(/[\s,(]+\S*$/,'')+'…':t)(v.d.split(' - ').slice(0,2).join(' - ').split(',')[0]):''}`).join(' · ')}. If this is a donor dump, its console had these problems. The NOR data can still be fine, but a donor with a clean log is a safer choice. Clear the log after writing.`]); }
     out.push(info.edition!=='unknown'?['pass',`Edition flag reads ${info.edition}`]:['fail','Edition flag unreadable',`Byte at 0x1C7011 is ${hx(info.modelByte,2)}`]);
     out.push(/^[A-Z0-9]{8,17}$/.test(info.serial)?['pass','Serial number looks valid']:['warnl','Serial number looks unusual', info.serial||'(empty)']);
     if (info.backupSerial && info.backupSerial!==info.serial) out.push(['warnl','Backup serial differs', `Backup copy at ${hx(this.F.SN.o+this.BACKUP)} reads ${info.backupSerial}`]);
@@ -1232,7 +1298,7 @@ async function openNor(file){
   $('#fileMeta').textContent=`${u8.length.toLocaleString()} bytes · computing hashes…`;
   ['infoCard','editCard','checksCard'].forEach(id=>$('#'+id).classList.remove('hidden'));
   $('#norEmptyCard').classList.add('hidden'); $('#compareCard').classList.add('hidden');
-  buildAdvanced(); buildSkuPicker(); renderInfo(); renderChecks(); renderEdits(); updatePills();
+  buildAdvanced(); buildSkuPicker(); renderInfo(); renderChecks(); renderEdits(); updatePills(); refreshCodeDescriptions();
   const m = md5(u8), s = await sha256(u8);
   nor.hashes={md5:m, sha256:s};
   $('#fileMeta').textContent=`${(u8.length/1048576).toFixed(2)} MB · MD5 ${m}`;
@@ -1390,7 +1456,8 @@ async function loadRestore(file){
   if (oi.edition!==nor.info.edition) toast('Different edition flag',`Original reads ${oi.edition}, loaded dump reads ${nor.info.edition}. Restore doesn't change the edition flag.`,'warn',7000);
   restoreSrc={u, info:oi, name:file.name};
   const ci=nor.info, cu=nor.u8;
-  $('#restoreList').innerHTML = `<div class="hint" style="margin:10px 0 0">From <b>${esc(file.name)}</b>. Tick what to copy, then Apply.</div><div class="rlist">` + RESTORE_ITEMS.map(it=>{
+  const hdrNote = u[0x1C4000]!==0x30 && cu[0x1C4000]===0x30 ? `<div class="hint" style="margin:8px 0 0;color:var(--warn)">The identity header byte in this file (0x1C4000) is ${hx(u[0x1C4000],2)} instead of 0x30, which usually means the chip was failing when it was read. Restore will keep 0x30.</div>` : '';
+  $('#restoreList').innerHTML = `<div class="hint" style="margin:10px 0 0">From <b>${esc(file.name)}</b>. Tick what to copy, then Apply.</div>${hdrNote}<div class="rlist">` + RESTORE_ITEMS.map(it=>{
     const from=it.text(oi,u), to=it.text(ci,cu), same = it.raw ? hex(u.subarray(it.raw[0],it.raw[0]+it.raw[1]))===hex(cu.subarray(it.raw[0],it.raw[0]+it.raw[1])) : from===to;
     return `<label class="${same?'same':''}"><input type="checkbox" data-ri="${it.k}" ${same?'':'checked'}><span>${esc(it.label)}</span><span class="rv">${same?esc(from)+' (already matches)':`<s>${esc(to)}</s> → ${esc(from)}`}</span></label>`; }).join('') +
     `</div><div class="row" style="margin-top:10px"><span class="spacer"></span><button class="btn sm ghost" id="btnRestoreCancel">Cancel</button><button class="btn sm primary" id="btnRestoreApply">Apply</button></div>`;
@@ -1404,11 +1471,16 @@ function applyRestore(){
   if (picked.has('sku'))    e.sku=oi.sku;
   if (picked.has('wifi'))   e.wifiMac=oi.wifiMac;
   e.raw=(e.raw||[]).filter(r=>!picked.has(r.k));
-  for (const it of RESTORE_ITEMS) if (it.raw && picked.has(it.k)) e.raw.push({k:it.k, o:it.raw[0], bytes:u.slice(it.raw[0],it.raw[0]+it.raw[1]), label:it.label});
+  let fixedHdr=false;
+  for (const it of RESTORE_ITEMS) if (it.raw && picked.has(it.k)){
+    const bytes=u.slice(it.raw[0],it.raw[0]+it.raw[1]);
+    if (it.k==='block' && bytes[0]!==0x30 && nor.u8[0x1C4000]===0x30){ bytes[0]=0x30; fixedHdr=true; }   // corrupted header byte in the source: keep the good one
+    e.raw.push({k:it.k, o:it.raw[0], bytes, label:it.label}); }
   $('#inSerial').value=e.serial; $('#inSku').value=e.sku; $('#inMobo').value=e.mobo; $('#inWifiMac').value=e.wifiMac;
   if (picked.has('block')) $('#inLanMac').value=oi.lanMac;
   $('#restoreList').classList.add('hidden');
   renderEdits(); toast('Identity restored', `${picked.size} item(s) from ${restoreSrc.name}. Review the byte diff, then save.`, 'ok');
+  if (fixedHdr) toast('Kept the identity header byte', `${restoreSrc.name} has ${hx(u[0x1C4000],2)} at 0x1C4000, which looks corrupted. Kept 0x30 from the loaded dump so the console doesn't give 3 beeps.`, 'warn', 9000);
   $('#diffCard').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth', block:'nearest'});
 }
 $('#btnRestore').addEventListener('click',()=>$('#restoreFile').click());
@@ -1761,7 +1833,15 @@ function setUartUi(on){
   if (!on) $('#portInfo').textContent='';
 }
 function setBusy(b){ ['#btnRead','#btnClear','#btnSend','#btnRunList'].forEach(s=>$(s).disabled=b||!uart.port); $('#btnRead').textContent=b?'Reading…':'Read error codes'; }
+function u8has(hay, needle){ outer: for (let i=hay.indexOf(needle[0]); i>=0 && i<=hay.length-needle.length; i=hay.indexOf(needle[0],i+1)){ for (let j=1;j<needle.length;j++) if (hay[i+j]!==needle[j]) continue outer; return true; } return false; }
+const le32 = h => { const v=parseInt(h,16); return [v&255,(v>>>8)&255,(v>>>16)&255,(v>>>24)&255]; };
+function inLoadedDump(c){
+  if (!nor.u8) return false;
+  const m=/OK [0-9A-F]{8} ([0-9A-F]{8}) ([0-9A-F]{8})/i.exec(c.raw||''); if (!m) return false;
+  return u8has(nor.u8, le32(m[2])) && u8has(nor.u8, le32(m[1]));   // the entry's timestamp and code are both stored in the dump
+}
 function renderCodes(){
+  uart.codes.forEach(c=>c.fromDump=inLoadedDump(c));
   let list=uart.codes;
   if ($('#chkDedupe').checked){ const seen=new Map(); list.forEach(c=>{ if(seen.has(c.code)) seen.get(c.code).count++; else seen.set(c.code,{...c,count:1}); }); list=[...seen.values()]; }
   $('#btnExport').disabled=!uart.codes.length;
@@ -1775,19 +1855,21 @@ function renderCodes(){
     if (i.seq) chips.push(['Seq',i.seq]);
     return `
     <div class="code ${desc?'':'unknown'}">
-      <div><div class="num">${c.code}</div><div class="slot">slot ${c.slot}${c.count>1?` · ×${c.count}`:''}</div></div>
+      <div><div class="num">${c.code}</div><div class="slot">slot ${c.slot}${c.count>1?` · ×${c.count}`:''}</div>${c.fromDump?'<span class="tag gray" title="This exact entry is stored in the dump loaded in the NOR Editor">In loaded dump</span>':''}</div>
       <div><div class="desc">${desc?esc(desc):'<span style="color:var(--warn)">Not in database</span>. Search forums or add your own note.'}${family?` <span class="tag gray" title="Matched pattern ${esc(family)}">family match</span>`:''}</div>
         ${chips.length?`<div class="chips">${chips.map(([k,v])=>`<span class="chip"><b>${esc(k)}</b> ${esc(v)}</span>`).join('')}</div>`:''}
         ${note?`<div class="note">📝 ${esc(note)}</div>`:''}<div class="raw">${esc(c.raw)}</div></div>
       <div><button class="copy" data-copy="${c.code}">Copy</button></div>
     </div>`; }).join('') : '<div class="empty">No error codes stored. 🎉</div>';
+  const nd=uart.codes.filter(c=>c.fromDump).length;
+  if (nd) $('#codeList').insertAdjacentHTML('afterbegin', `<div class="diag" style="margin:0 0 10px;background:rgba(255,183,77,.07);border-color:rgba(255,183,77,.35);color:#ffe2b8"><b>${nd===uart.codes.length?'All':nd} of these codes ${nd===1?'is':'are'} already stored in the dump loaded in the NOR Editor (${esc(nor.file?.name||'loaded dump')})</b><span>They were logged before that dump was made. If you wrote a dump from another console, these codes are that console's history, not this one's. Clear the log, unplug for 10 seconds, plug back in and read again to see only new codes.</span></div>`);
 }
 function refreshCodeDescriptions(){ if (uart.codes.length) renderCodes(); }
 function exportReport(){
   const lines=[`NOR Studio — UART error report`,`Generated: ${new Date().toLocaleString()}`, nor.info?`Dump: ${nor.file.name} · ${nor.info.sku} · ${nor.info.serial}`:'', `Database: ${db.meta?`${db.meta.count} codes (${db.meta.source})`:'none'}`,'',
     ...uart.codes.map(c=>{ const {desc,note}=lookup(c.code), i=c.info||{};
       const det=[i.sys&&`State: ${i.sys}`, i.os&&`OS: ${i.os}`, i.boot?.length&&`Boot: ${i.boot.join(', ')}`, i.devices?.length&&`Devices: ${i.devices.join(', ')}`, i.soc!=null&&`SoC ${i.soc.toFixed(1)} °C`, i.env!=null&&`Ambient ${i.env.toFixed(1)} °C`].filter(Boolean).join(' · ');
-      return `Slot ${c.slot}: ${c.code}  ${desc||'(not in database)'}${det?`\n          ${det}`:''}${note?`\n          Note: ${note}`:''}\n          Raw: ${c.raw}`; })].filter(l=>l!==undefined);
+      return `Slot ${c.slot}: ${c.code}  ${desc||'(not in database)'}${c.fromDump?'  [already in loaded dump]':''}${det?`\n          ${det}`:''}${note?`\n          Note: ${note}`:''}\n          Raw: ${c.raw}`; })].filter(l=>l!==undefined);
   download(`uart-report-${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.txt`, lines.join('\n'), 'text/plain');
 }
 async function sendCustom(){
@@ -1962,7 +2044,7 @@ function makeDemoDump(){
   put(0,'SONY COMPUTER ENTERTAINMENT INC.'); put(0x2000,'Sony Computer Entertainment Inc.'); put(0x3000,'Sony Computer Entertainment Inc.'); put(0x1000,[0]);
   for (const k of [0,0x3000]){ put(0x1C7010+k,[0x22,0x02,0x01,0x01]); put(0x1C7030+k,[0x22,0x02,0x01,0x01,0,0,0,0,0x89]);
     put(0x1C7200+k,'DEMOMOBO00000001'); put(0x1C7210+k,[...'E00000000000001'].map(c=>c.charCodeAt(0)).concat([0,0])); put(0x1C7230+k,[...'CFI-1215A'].map(c=>c.charCodeAt(0)).concat([0,0,0,0])); }
-  put(0x1C4000,[1,2,2,0,1,1,0,0]); put(0x1C4020,[0x02,0xDE,0xAD,0x00,0x00,0x01]); put(0x1C73C0,[0x02,0xDE,0xAD,0x00,0x00,0x02]);
+  put(0x1C4000,[0x30,2,2,0,1,1,0,0]); put(0x1C4020,[0x02,0xDE,0xAD,0x00,0x00,0x01]); put(0x1C73C0,[0x02,0xDE,0xAD,0x00,0x00,0x02]);
   for (const o of [0x1C75FC,0x1C81FC,0x1CB1FC]) put(o,[0xE5,0xE5,0xE5,0x01]);
   put(0x1C8C30,[0,0,0x40,0x20,0x01,0x09,0,0]); put(0x1C9600,[0]);
   for (const o of [0x4000,0x82000,0x100000,0x110000]) put(o,'SLB2');
@@ -2287,7 +2369,7 @@ const _renderEdits=renderEdits; renderEdits=function(){ _renderEdits(); renderWr
 /* ============================================================ guide */
 $('#boardSeg').addEventListener('click',e=>{ const b=e.target.dataset?.b; if(!b) return;
   $$('#boardSeg button').forEach(x=>x.classList.toggle('on',x.dataset.b===b));
-  ['b12','b3','b4','wire'].forEach(x=>$('#guide-'+x).classList.toggle('hidden',b!==x)); store.set('guideBoard',b); });
+  ['b12','b3','b4','wire','beeps'].forEach(x=>$('#guide-'+x).classList.toggle('hidden',b!==x)); store.set('guideBoard',b); });
 { const gb=store.get('guideBoard','b12'); if (gb!=='b12') $(`#boardSeg button[data-b=${gb}]`)?.click(); }
 
 document.addEventListener('click',e=>{ if(e.target.closest('[data-goto-wire]')){ e.preventDefault(); switchView('guide'); $('#boardSeg button[data-b=wire]').click(); } });

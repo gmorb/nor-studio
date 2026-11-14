@@ -27,6 +27,7 @@
 | 🔌 **CH341A Programmer** | Reads the NOR straight into the editor (reads twice and compares), lets you read first before every write (saves a backup and rewrites only the 4 KB sectors that changed) or write without reading after a clear warning, then verifies the whole chip. Detects the chip and warns about 1.8 V parts. If the chip doesn't answer, it diagnoses the ID (stuck high, stuck low, shifted, intermittent) and a **wiring check** walks through all six connections to name the one that's broken. |
 | 📟 **UART Diagnostics** | Detects the console automatically and wakes it with a serial break. Reads the whole error log and decodes each entry: description, power state, OS state, boot cause, active devices, SoC and ambient temperatures, and time between entries. Also has a terminal with auto‑checksum, a command‑list runner, log clearing and report export. |
 | 📚 **Error Code Database** | 430+ exact codes plus 30+ code families (pattern matching). Downloads over HTTPS and is cached offline. Imports the old `errorDB.xml`, Console Service Tool JSON or CSV. Adds your own repair notes per code. |
+| 🔔 **3 beeps troubleshooter** | Step-by-step checks for a console that beeps three times when plugged in, taken from a real EDM-041 repair, plus a checklist for vetting donor dumps (with a check of the donor's own error log) and restoring your own identity. NOR Studio doesn't host dumps. |
 | 🗺️ **Hardware Guide** | EDM‑010/020 NOR pinout (IC5001, W25Q16JV) and UART pad map (JL5101–JL5110) in real board orientation, EDM‑03x and EDM‑04x+ (Slim) UART pads, in‑circuit vs chip‑off guidance, and tips for Slim boards. |
 | 💡 **PS5 light bar** | A thin glow along the top edge shows what the tool is doing: blue while working, a white flash on success, amber on errors. |
 | 🛡️ **Safety first** | Voltage checks before connecting, 3.3 V‑mod warnings for the CH341A, write gates, serial/MAC mismatch warnings. Your original file is never modified. |
@@ -44,6 +45,9 @@
   </tr>
   <tr>
     <td colspan="2"><img src="docs/screenshots/hardware-guide.png" alt="Hardware guide"><p align="center"><b>Hardware Guide</b>: NOR pinout and UART pad map for EDM‑010/020</p></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><img src="docs/screenshots/three-beeps.png" alt="3 beeps troubleshooter" width="85%"><p align="center"><b>3 beeps troubleshooter</b>: what to check, in order, when a console beeps three times on plug-in</p></td>
   </tr>
   <tr>
     <td colspan="2" align="center"><img src="docs/screenshots/wiring-check.png" alt="Wiring check" width="70%"><p align="center"><b>Wiring check</b>: finds which CH341A connection is broken when the chip reads FF FF FF</p></td>

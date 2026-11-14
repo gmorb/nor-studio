@@ -3,7 +3,7 @@
 ## v1.2.0
 
 ### Added
-- EDM-010 photos of the NOR (IC5001) next to its `CXD90061GG` southbridge, a board-orientation view of the chip in the Hardware Guide tab, and a southbridge versions table (EDM-010 `CXD90061GG`, EDM-041 `CXD90069GG`).
+- EDM-010 photos of the NOR (IC5001) next to its `CXD90061GG` southbridge, the IC5001 diagram in the Hardware Guide tab redrawn as it actually sits on the board (replacing the schematic-style pinout), and a southbridge versions table (EDM-010 `CXD90061GG`, EDM-041 `CXD90069GG`).
 - **User manual (PDF)** in `docs/NOR-Studio-Manual.pdf`: safety, setup, every tab, step-by-step jobs, the 3 beeps troubleshooter and troubleshooting. Its source is in `docs/manual-src/` and rebuilds with `build_manual.py`.
 - **3 beeps troubleshooter** in the Hardware Guide tab: the order to check things in when a console beeps three times on plug-in, the EDM-041 case it came from, how to vet a donor dump, and how to put your own identity back.
 - The NOR Editor health check reads the dump's own error log. A donor whose log shows APU, power-sequence or thermal faults gets a warning, so you know that console was faulty and that those codes aren't yours.

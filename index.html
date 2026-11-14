@@ -98,6 +98,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 select option{background:#101828}
 .hint{font-size:11.5px;color:var(--dim);margin:5px 0 10px;min-height:16px}
 .hint.err{color:var(--bad)}
+.hint.warn{color:var(--warn)}
 .check{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;cursor:pointer;user-select:none}
 .check input{accent-color:var(--blue2);width:16px;height:16px}
 
@@ -253,6 +254,9 @@ body.lb-err .lightbar{background:linear-gradient(90deg,transparent,#ffb547 15%,#
 .wl-legend{font-size:12px;color:var(--dim)}
 .wl-legend b{color:var(--muted);font-family:var(--mono)}
 body.hide-wire .wirebadges,body.hide-wire .wl-legend{display:none}
+.fwnote{display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding:11px 13px;border-radius:12px;background:rgba(0,0,0,.2);border:1px solid var(--line)}
+.fwnote p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.55}
+.fwnote .tag{flex:0 0 auto;margin-top:1px}
 .help h3{font-size:14px;margin:18px 0 6px}
 .help p,.help li{color:#c5cede;font-size:13.5px}
 .help code{font-family:var(--mono);background:rgba(255,255,255,.07);padding:1px 6px;border-radius:6px;font-size:12px}
@@ -321,6 +325,7 @@ h1,h2,h3{text-wrap:balance}
         <h2>Console information <span id="editionTag"></span></h2>
         <p class="sub">Read straight from the NVS area of the dump.</p>
         <div class="kv" id="infoTable"></div>
+        <div class="fwnote"><span class="tag gray">Read-only</span><p>The firmware values are a record of the system software on the console's SSD; editing them wouldn't change what's installed. To reinstall it (for example after an SSD repair, or when Safe Mode asks), download the latest full PS5 system software reinstallation file from playstation.com and install it from USB in Safe Mode. Use a version the same as or newer than "installed"; older versions won't install.</p></div>
       </div>
 
       <div class="card hidden" id="compareCard">
@@ -1175,7 +1180,7 @@ function renderInfo(){
     ['Serial number', i.serial||'—'], ['Motherboard serial', i.moboSerial||'—'], ['Model / SKU', i.sku||'—'],
     ['Region', i.region[0]?`${i.region[1]} (${i.region[0]})`:'—'], ['Board', i.board, i.boardRaw],
     ['WiFi MAC', i.wifiMac, 'Wireless MAC block (base, +1, +2): '+i.wifiCopies.join(' · ')], ['LAN MAC', i.lanMac], ['Kiban ID', i.kiban||'—'],
-    ['Firmware', i.fw, `Minimum ${i.fwMin} · Factory ${i.fwFac}`], ['Active slot', i.slot],
+    ['Firmware (installed)', i.fw, 'Version the console last installed'], ['Firmware (minimum)', i.fwMin, 'Oldest version this console will accept'], ['Firmware (factory)', i.fwFac, 'Version it shipped with'], ['Active slot', i.slot],
     ['OS flags', (()=>{ const on=NOR.OS_FLAGS.filter(f=>NOR.flagLabel(f,i.flags[f.k][0])!=='Off').map(f=>`${f.name}: ${NOR.flagLabel(f,i.flags[f.k][0])}`); return on.length?on.join(' · '):'All off (retail)'; })()],
     ['MD5', h.md5||'…'], ['SHA-256', h.sha256||'…'],
   ];
@@ -1194,6 +1199,7 @@ function validate(){
   if (e.sku===i.sku) {}
   else if (!/^[A-Z]{3}-[0-9A-Z]{4}( ?[0-9A-Z]{1,6})?$/.test(e.sku)) errs.sku='Format: CFI-1216A or CFI-2015 A01X';
   else if (e.sku.length>13) errs.sku='Max 13 characters.';
+  else if (i.sku && e.sku.length!==i.sku.length) errs.skuWarn=`Original "${i.sku}" is ${i.sku.length} characters, this is ${e.sku.length}. Check nothing was left off the end.`;
   const macOk = m => /^([0-9A-F]{2}:){5}[0-9A-F]{2}$/.test(m);
   if (e.mobo!==i.moboSerial && !/^[A-Z0-9]{1,16}$/.test(e.mobo)) errs.adv='Motherboard serial: letters/digits, max 16.';
   if (e.lanMac!==i.lanMac && !macOk(e.lanMac)) errs.adv='LAN MAC must be 12 hex digits.';
@@ -1208,10 +1214,10 @@ function renderEdits(){
   if (document.activeElement!==$('#inSku')) $('#inSku').value=e.sku;
   const errs=validate();
   $('#inSerial').classList.toggle('invalid',!!errs.serial); $('#inSku').classList.toggle('invalid',!!errs.sku);
-  $('#serialHint').textContent = errs.serial||errs.serialWarn||''; $('#serialHint').classList.toggle('err',!!errs.serial);
+  $('#serialHint').textContent = errs.serial||errs.serialWarn||''; $('#serialHint').classList.toggle('err',!!errs.serial); $('#serialHint').classList.toggle('warn',!errs.serial&&!!errs.serialWarn);
   const r=NOR.regionOf(e.sku);
-  $('#skuHint').textContent = errs.sku || (r[0]?[`Region ${r[0]}`, r[1], /A$/.test(e.sku)?'A suffix (usually disc)':/B$/.test(e.sku)?'B suffix (usually digital)':''].filter(Boolean).join(' · '):'');
-  $('#skuHint').classList.toggle('err',!!errs.sku);
+  $('#skuHint').textContent = errs.sku || errs.skuWarn || (r[0]?[`Region ${r[0]}`, r[1], /A$/.test(e.sku)?'A suffix (usually disc)':/B$/.test(e.sku)?'B suffix (usually digital)':''].filter(Boolean).join(' · '):'');
+  $('#skuHint').classList.toggle('err',!!errs.sku); $('#skuHint').classList.toggle('warn',!errs.sku&&!!errs.skuWarn);
   $('#advHint').textContent = errs.adv||''; $('#advHint').classList.toggle('err',!!errs.adv);
   ['inMobo','inLanMac','inWifiMac'].forEach(id=>$('#'+id).classList.toggle('invalid', !!errs.adv && errs.adv.startsWith({inMobo:'Mother',inLanMac:'LAN',inWifiMac:'WiFi'}[id])));
   const flagsDirty = NOR.OS_FLAGS.some(f=>!i.flags[f.k].every(x=>NOR.flagLabel(f,x)===NOR.flagLabel(f,e.flags[f.k])));
@@ -1239,7 +1245,7 @@ function renderEdits(){
 }
 async function savePatched(){
   if (!nor.result) return toast('Nothing to save','Make a change first','warn');
-  const sum = nor.result.notes.join('\n');
+  const ev=validate(); const sum = nor.result.notes.join('\n') + ([ev.serialWarn,ev.skuWarn].filter(Boolean).map(w=>'\n\n⚠ '+w).join(''));
   if (!await confirmBox('Save patched dump?', `${sum}\n\nYour original file stays untouched.`, 'Save')) return;
   let name=$('#outName').value.trim()||'patched.bin'; if(!/\.bin$/i.test(name)) name+='.bin';
   download(name, nor.result.out);

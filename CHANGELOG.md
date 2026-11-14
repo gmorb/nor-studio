@@ -15,7 +15,9 @@
 - Error-code rows no longer overflow the screen on phones.
 - "Copied" notifications no longer flash the light bar, and at most 4 notifications stack at once.
 - The health check no longer warns "WiFi MAC copies differ" on healthy dumps. The three addresses at 0x1C73C0 are a consecutive block (base, +1, +2), not copies. The check now confirms they're sequential, and editing the WiFi MAC writes base, +1 and +2 instead of the same address three times.
+- Changing the model number to a different length (e.g. dropping the trailing letter of `CFI-2015 A01X`) now shows an amber warning and is repeated in the save confirmation, like serial-length changes.
 - Slim model numbers with a space (e.g. `CFI-2015 A01X`) can be edited without the space being stripped.
+- NOR editor shows all three firmware values (installed, minimum, factory) with a note on what they mean and how to reinstall system software in Safe Mode. They're read-only on purpose.
 - Verified against two real EDM‑041 dumps: every field parses correctly and the health check passes cleanly.
 - On phones, the background glow no longer stretches while scrolling (the backdrop is now a fixed full-height layer instead of a fixed background).
 

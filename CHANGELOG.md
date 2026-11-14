@@ -12,6 +12,8 @@
 - Polish: hover effects only on mouse devices, themed dropdown arrows, fixed-width numbers, scroll areas don't drag the page, the tab title follows the active section.
 
 ### Fixed
+- UART no longer drops the connection when the console loses power. The line interruption is noted in the terminal and the app keeps listening, so the boot banner shows up when you plug the console back in.
+- If the UART connection is lost, the port is now released properly. Before, reconnecting said the port was busy until you unplugged and replugged the USB adapter.
 - Switching tabs no longer makes the background flash brighter and then dim: tabs now switch instantly.
 - Closing or reloading the page while the programmer is writing now asks for confirmation (a half-written NOR can stop a console booting).
 - "Run list…" is locked while error codes are being read, and reading is locked while a list runs.

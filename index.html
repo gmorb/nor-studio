@@ -1591,11 +1591,12 @@ class SimulatedPort {
   async close(){}
 }
 class WebSerialPort {
-  constructor(port){ this.port=port; this.listener=null; this.reader=null; this.closing=false; const i=port.getInfo?.()||{}; this.name = i.usbVendorId ? `USB ${i.usbVendorId.toString(16).padStart(4,'0')}:${(i.usbProductId||0).toString(16).padStart(4,'0')}${VENDORS[i.usbVendorId]?' · '+VENDORS[i.usbVendorId]:''}` : 'Serial port'; }
+  static live=new Map();
+  constructor(port){ this.port=port; WebSerialPort.live.get(port)?.close(); WebSerialPort.live.set(port,this); this.listener=null; this.reader=null; this.closing=false; const i=port.getInfo?.()||{}; this.name = i.usbVendorId ? `USB ${i.usbVendorId.toString(16).padStart(4,'0')}:${(i.usbProductId||0).toString(16).padStart(4,'0')}${VENDORS[i.usbVendorId]?' · '+VENDORS[i.usbVendorId]:''}` : 'Serial port'; }
   async open(baud){
     await this.port.open({baudRate:baud, dataBits:8, stopBits:1, parity:'none', bufferSize:4096});
     try { await this.port.setSignals({requestToSend:true, dataTerminalReady:true}); } catch {}
-    this.loop();
+    this.loopDone=this.loop();
   }
   async loop(){
     const dec=new TextDecoder(); let buf='';
@@ -1606,13 +1607,28 @@ class WebSerialPort {
           buf+=dec.decode(value,{stream:true}); let i;
           while((i=buf.search(/\r?\n|\r/))>=0){ const line=buf.slice(0,i); buf=buf.slice(i+(buf[i]==='\r'&&buf[i+1]==='\n'?2:1)); if(line.trim()) this.listener?.(line.trim()); }
         }
-      } catch(err){ if(!this.closing) uart.onLost(err); break; }
-      finally { this.reader.releaseLock(); }
+      } catch(err){
+        if (this.closing) break;
+        // A console losing power makes the line drop: Chrome reports that as a break/framing/parity error.
+        // Those are not fatal — port.readable comes back, so keep listening instead of dropping the port.
+        if (/^(BreakError|FramingError|ParityError|BufferOverrunError)$/.test(err?.name)){
+          const now=Date.now(); if (!this.noiseAt || now-this.noiseAt>5000){ this.noiseAt=now; uart.term('sys','Line interrupted (console power off or reset?). Still listening.'); }
+          await sleep(50); continue;
+        }
+        uart.onLost(err); break;
+      }
+      finally { try { this.reader.releaseLock(); } catch {} }
     }
   }
   async sendBreak(){ try { await this.port.setSignals({break:true}); await sleep(150); await this.port.setSignals({break:false}); } catch {} }
   async write(line){ const w=this.port.writable.getWriter(); try { await w.write(new TextEncoder().encode(line+'\n')); } finally { w.releaseLock(); } }
-  async close(){ this.closing=true; try{ await this.reader?.cancel(); }catch{} try{ await this.port.close(); }catch{} }
+  async close(){
+    if (this.closed) return; this.closing=true;
+    try{ await this.reader?.cancel(); }catch{}
+    try{ await withTimeout(this.loopDone||Promise.resolve(), 1000); }catch{}   // wait for the reader lock to be released
+    try{ await this.port.close(); this.closed=true; }catch{}
+    WebSerialPort.live.delete(this.port);
+  }
 }
 const VENDORS={0x1a86:'CH340/CH341',0x10c4:'CP210x',0x0403:'FTDI',0x067b:'Prolific',0x2e8a:'Raspberry Pi'};
 
@@ -1650,6 +1666,8 @@ const uart = {
            <p class="vsub">Using a black CH341A board as the UART adapter? It needs the 3.3&nbsp;V mod — stock boards put ~5&nbsp;V on TX.</p>`,
           'My adapter is set to 3.3 V and VCC is not connected');
         if (!ok) return;
+        await WebSerialPort.live.get(raw)?.close();                                  // left open by an earlier connection
+        if (raw.readable || raw.writable){ try { await raw.close(); } catch {} }
         p=new WebSerialPort(raw);
       }
       p.listener=l=>this.onLine(l);
@@ -1666,7 +1684,9 @@ const uart = {
     }
   },
   async disconnect(){ const p=this.port; this.port=null; this.waiters.splice(0).forEach(w=>w.reject(new Error('Disconnected'))); await p?.close(); this.term('sys','Disconnected'); setUartUi(false); updatePills(); },
-  onLost(err){ this.term('sys','Connection lost: '+(err?.message||'device removed')); toast('UART disconnected','The adapter was unplugged or stopped responding.','warn'); this.port=null; setUartUi(false); updatePills(); },
+  onLost(err){ const p=this.port; this.port=null; this.waiters.splice(0).forEach(w=>w.reject(new Error('Disconnected')));
+    p?.close?.().catch(()=>{});   // release the OS port, or reconnecting says it's busy
+    this.term('sys','Connection lost: '+(err?.message||'device removed')); toast('UART disconnected','The adapter was unplugged or stopped responding.','warn'); setUartUi(false); updatePills(); },
   async send(cmd, {cs=true, timeout=2000, expect=/(^|\s)(OK|NG)(\s|:|$)/}={}){
     if (!this.port) throw new Error('Not connected');
     const line = cs ? withChecksum(cmd) : cmd;

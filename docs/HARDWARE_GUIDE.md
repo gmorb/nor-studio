@@ -142,4 +142,5 @@ No official schematic or boardview is included here. Pinouts from launch boards 
 - Find TX with a meter: in standby it idles at ≈3.3 V. Confirm GND with continuity.
 - Find the NOR near the southbridge and read its marking. `W25Q…JV/V` means 3.3 V; `25U…`, `W25Q…W` and `GD25LQ…` mean 1.8 V and need a 1.8 V adapter.
 - Community pad maps exist on repair forums. Use them as a starting point and verify them.
-- Slim dumps are 2 MB. NOR Studio reads and edits serial/SKU, but disables Disc ↔ Digital switching for them.
+- Slim dumps are 2 MB. NOR Studio reads and edits serial/SKU, but disables Disc ↔ Digital switching for them. Two real EDM‑041 dumps, one disc (`CFI-2015 A01X`) and one digital (`CFI-2015 B01X`), both carry the same edition flag `22 01 01 01` at 0x1C7010. On Slims only the model number's A/B letter differs.
+- Real EDM‑041 dumps verified field by field: serial, motherboard serial, SKU, board, LAN MAC, wireless MAC block (base, +1, +2), Kiban ID, firmware, OS flags, EAP magics and the SLB2 containers all parse correctly. Note that the +0x3000 backup area is empty (FF) on these Slim dumps.

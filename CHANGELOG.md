@@ -14,6 +14,10 @@
 - "Run list…" is locked while error codes are being read, and reading is locked while a list runs.
 - Error-code rows no longer overflow the screen on phones.
 - "Copied" notifications no longer flash the light bar, and at most 4 notifications stack at once.
+- The health check no longer warns "WiFi MAC copies differ" on healthy dumps. The three addresses at 0x1C73C0 are a consecutive block (base, +1, +2), not copies. The check now confirms they're sequential, and editing the WiFi MAC writes base, +1 and +2 instead of the same address three times.
+- Slim model numbers with a space (e.g. `CFI-2015 A01X`) can be edited without the space being stripped.
+- Verified against two real EDM‑041 dumps: every field parses correctly and the health check passes cleanly.
+- On phones, the background glow no longer stretches while scrolling (the backdrop is now a fixed full-height layer instead of a fixed background).
 
 ### Hardware guide
 - New "CH341A wiring" guide: direct wiring from the programmer header to the chip (MISO→DO, MOSI→DI), alias names, chip-ID troubleshooting, and when to leave the 3.3 V wire off (powered-board method).

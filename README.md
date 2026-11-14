@@ -7,6 +7,7 @@
   <a href="LICENSE"><img alt="License: GPL-2.0" src="https://img.shields.io/badge/license-GPL--2.0-3ddc97?style=for-the-badge"></a>
   <img alt="Single HTML file" src="https://img.shields.io/badge/single%20file-HTML-f290d6?style=for-the-badge">
   <img alt="Chrome / Edge" src="https://img.shields.io/badge/Chrome%20%7C%20Edge-desktop-7fa8ff?style=for-the-badge">
+  <a href="docs/NOR-Studio-Manual.pdf"><img alt="User manual (PDF)" src="https://img.shields.io/badge/manual-PDF-ffb74d?style=for-the-badge&logo=adobeacrobatreader&logoColor=white"></a>
 </p>
 
 <p align="center">
@@ -71,7 +72,9 @@
 | FT232R / CH340 / CP2102 | UART tab | Set the jumper to **3.3 V**. Wire TX, RX and GND only. |
 | XGecu T76 / RT809 | Use their own software | Open the resulting `.bin` in NOR Studio to edit |
 
-See the in‑app **Help** and **Hardware Guide** tabs, or [`docs/HARDWARE_GUIDE.md`](docs/HARDWARE_GUIDE.md).
+📘 **New to NOR Studio?** Read the [user manual (PDF)](docs/NOR-Studio-Manual.pdf): safety, setup, every tab, step-by-step jobs, the 3 beeps troubleshooter and a troubleshooting table.
+
+See also the in‑app **Help** and **Hardware Guide** tabs, or [`docs/HARDWARE_GUIDE.md`](docs/HARDWARE_GUIDE.md).
 
 ## 🔧 Typical workflows
 

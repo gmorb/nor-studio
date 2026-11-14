@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>NOR Studio User Manual</title>
+<link rel="stylesheet" href="plexmono.css">
+<style>
+@page { size: Letter; margin: 0.8in 0.85in 0.85in 0.85in; }
+@page cover { margin: 0; }
+:root{ --ink:#141a26; --soft:#4a5468; --line:#dfe4ec; --blue:#1f6fe0; --navy:#0d1a33; --warn:#b4540a; --bad:#c22a45; --good:#14834f; --mono:"IBM Plex Mono", ui-monospace, monospace; }
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:Inter, sans-serif; color:var(--ink); font-size:10.2pt; line-height:1.55; font-feature-settings:"cv11","ss01";}
+.cover{page:cover; height:11in; width:8.5in; background:#070d1a; color:#fff; position:relative; overflow:hidden; break-after:page; padding:1.1in 0.9in;}
+.cover .glow{position:absolute; inset:0; background:radial-gradient(70% 55% at 85% 10%, rgba(47,143,255,.35), transparent 60%), radial-gradient(60% 45% at 0% 100%, rgba(47,143,255,.18), transparent 60%);}
+.cover .shapes{position:absolute; right:-40px; bottom:120px; opacity:.13}
+.cover .bar{position:absolute; top:0; left:0; right:0; height:5px; background:linear-gradient(90deg,transparent,#2f8fff 30%,#9cc8ff 50%,#2f8fff 70%,transparent)}
+.cover .inner{position:relative}
+.cover .logo{width:64px;height:64px;border-radius:16px;background:#111c33;border:1px solid rgba(255,255,255,.12);display:grid;place-items:center}
+.cover h1{font-size:46pt; line-height:1; letter-spacing:-.02em; margin:46px 0 10px; font-weight:700}
+.cover .sub{font-size:15pt; color:#b9c8e2; max-width:5.2in; line-height:1.4}
+.cover .meta{position:absolute; left:0.9in; bottom:0.9in; right:0.9in; font-size:9.5pt; color:#9aabc8; line-height:1.6; border-top:1px solid rgba(255,255,255,.12); padding-top:16px}
+.cover .meta b{color:#fff; font-weight:600}
+.cover .ver{display:inline-block; margin-top:28px; font:500 9.5pt var(--mono); color:#9cc8ff; border:1px solid rgba(156,200,255,.35); border-radius:999px; padding:4px 12px}
+
+h2{font-size:20pt; letter-spacing:-.01em; margin:0 0 4px; color:var(--navy); break-after:avoid}
+h2 .n{color:var(--blue); font-variant-numeric:tabular-nums; margin-right:10px}
+.lede{color:var(--soft); font-size:11pt; margin:0 0 18px; max-width:6in}
+h3{font-size:12.5pt; margin:22px 0 6px; color:var(--navy); break-after:avoid}
+h4{font-size:10.5pt; margin:14px 0 4px; break-after:avoid}
+p{margin:0 0 9px}
+section.ch{break-before:page}
+ul,ol{margin:4px 0 10px; padding-left:20px} li{margin-bottom:4px}
+code,.k{font-family:var(--mono); font-size:9pt; background:#eef2f8; border:1px solid #e1e7f0; border-radius:4px; padding:0 4px; white-space:nowrap}
+kbd{font-family:var(--mono); font-size:8.6pt; border:1px solid #c9d2e0; border-bottom-width:2px; border-radius:4px; padding:0 5px; background:#fff}
+b,strong{font-weight:600}
+figure{margin:12px 0 16px; break-inside:avoid}
+figure img{width:100%; display:block; border-radius:8px; border:1px solid #1d2a44; box-shadow:0 1px 0 rgba(0,0,0,.04)}
+figure.half img{width:62%} figure.mid img{width:78%}
+figcaption{font-size:8.6pt; color:var(--soft); margin-top:6px}
+.note{border-left:3px solid var(--blue); background:#f2f7ff; padding:10px 14px; border-radius:0 8px 8px 0; margin:12px 0; break-inside:avoid}
+.note.warn{border-color:var(--warn); background:#fff6ec}
+.note.bad{border-color:var(--bad); background:#fff1f3}
+.note b:first-child{display:block; margin-bottom:2px}
+table{width:100%; border-collapse:collapse; margin:8px 0 14px; font-size:9.3pt; break-inside:auto}
+th{text-align:left; font-weight:600; color:var(--soft); font-size:8.4pt; letter-spacing:.02em; border-bottom:1.5px solid var(--ink); padding:6px 8px 5px}
+td{border-bottom:1px solid var(--line); padding:6px 8px; vertical-align:top}
+tr{break-inside:avoid}
+td:first-child{font-weight:600; white-space:nowrap}
+td.m{font-family:var(--mono); font-size:8.8pt; font-weight:500}
+.cols{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+.toc{columns:2; column-gap:30px; margin-top:6px}
+.toc a{display:flex; gap:10px; padding:7px 0; border-bottom:1px solid var(--line); color:var(--ink); text-decoration:none; break-inside:avoid}
+.toc a span{color:var(--blue); font-weight:600; width:22px; font-variant-numeric:tabular-nums}
+.steps{counter-reset:s; list-style:none; padding:0}
+.steps>li{counter-increment:s; position:relative; padding-left:34px; margin-bottom:9px; break-inside:avoid}
+.steps>li::before{content:counter(s); position:absolute; left:0; top:0; width:22px; height:22px; border-radius:50%; background:var(--navy); color:#fff; font-size:9pt; font-weight:600; display:grid; place-items:center}
+.pins{font-family:var(--mono)}
+.keep{break-inside:avoid}
+</style></head>
+<body>
+
+<div class="cover">
+  <div class="glow"></div><div class="bar"></div>
+  <svg class="shapes" width="520" height="520" viewBox="0 0 520 520" fill="none" stroke="#9cc8ff" stroke-width="14">
+    <path d="M130 40 L220 196 L40 196 Z"/><circle cx="390" cy="118" r="78"/><path d="M60 300 L200 440 M200 300 L60 440"/><rect x="320" y="300" width="140" height="140"/>
+  </svg>
+  <div class="inner">
+    <div class="logo"><svg width="38" height="38" viewBox="0 0 40 40" fill="none" stroke-width="2.6"><path d="M10 5 L16 15 L4 15 Z" stroke="#3ddc97"/><circle cx="29" cy="10" r="5.5" stroke="#ff5c7a"/><path d="M5 25 L15 35 M15 25 L5 35" stroke="#7aa7ff"/><rect x="24" y="25" width="10" height="10" stroke="#ff8ad8"/></svg></div>
+    <h1>NOR Studio</h1>
+    <div class="sub">User manual: editing PS5 NOR dumps, reading and writing the chip with a CH341A, and diagnosing consoles over UART.</div>
+    <div class="ver">Version 1.2.0</div>
+  </div>
+  <div class="meta">
+    <b>NOR Studio</b> is based on PS5 NOR Modifier by TheCod3r (GPL-2.0), rebuilt with AI assistance. Improvements, features and ideas by <b>The Goat Tech</b>.<br>
+    Unofficial tool, not affiliated with or endorsed by Sony Interactive Entertainment. Modifying or flashing a NOR can permanently damage a console. Use at your own risk.
+  </div>
+</div>
+
+<section>
+  <h2>Contents</h2>
+  <div class="toc">
+    <a href="#s1"><span>1</span>What NOR Studio does</a>
+    <a href="#s2"><span>2</span>Before you start: safety</a>
+    <a href="#s3"><span>3</span>Setting up</a>
+    <a href="#s4"><span>4</span>Finding your way around</a>
+    <a href="#s5"><span>5</span>NOR Editor</a>
+    <a href="#s6"><span>6</span>Programmer (CH341A)</a>
+    <a href="#s7"><span>7</span>Wiring check</a>
+    <a href="#s8"><span>8</span>UART diagnostics</a>
+    <a href="#s9"><span>9</span>Error code database</a>
+    <a href="#s10"><span>10</span>Hardware guide</a>
+    <a href="#s11"><span>11</span>Common jobs, step by step</a>
+    <a href="#s12"><span>12</span>3 beeps on plug-in</a>
+    <a href="#s13"><span>13</span>Troubleshooting</a>
+    <a href="#s14"><span>14</span>Credits and license</a>
+  </div>
+
+  <h3 id="s1" style="margin-top:34px">1 · What NOR Studio does</h3>
+  <p>The PS5 keeps its low-level firmware and its identity (serial number, model, MAC addresses, edition) on a small 2&nbsp;MB flash chip called the NOR. When that chip or its data goes bad, the console may not power on at all, or it beeps three times as soon as it's plugged in.</p>
+  <p>NOR Studio is one web page that covers the whole repair:</p>
+  <ul>
+    <li><b>NOR Editor:</b> open a dump, see what's in it, check it for damage, change the edition, serial or model, and copy a console's identity onto a donor dump.</li>
+    <li><b>Programmer:</b> read and write the NOR chip with a CH341A programmer, straight from the browser.</li>
+    <li><b>UART:</b> read the console's error log through its service pads and decode every entry.</li>
+    <li><b>Error codes, hardware guide and help:</b> a searchable code database, board pinouts and wiring guides.</li>
+  </ul>
+  <p>Everything runs in your browser. Nothing is uploaded, and your original files are never changed: edits are always saved as a new file.</p>
+</section>
+
+<section class="ch" id="s2">
+  <h2><span class="n">2</span>Before you start: safety</h2>
+  <p class="lede">A few minutes here can save a console. These are the mistakes that damage boards.</p>
+
+  <div class="note bad"><b>Most black CH341A boards put 5 V on their signal pins.</b>Even with the 3.3&nbsp;V supply selected, the stock board drives CS, CLK and MOSI at about 5&nbsp;V. That can damage the NOR chip and the PS5's southbridge. Do the 3.3&nbsp;V mod before using a CH341A on a PS5, whether as a programmer or as a UART adapter. To check yours: plug it into USB with nothing attached and measure from GND to CS or MOSI. If you read about 5&nbsp;V, it isn't modded.</div>
+
+  <h3>The rules</h3>
+  <ul>
+    <li><b>Always save a backup first.</b> Read the chip and save the file before writing anything. Keep that file somewhere safe: it's the only copy of your console's identity.</li>
+    <li><b>Unplug the console before clipping onto the NOR.</b> Never connect the programmer's VCC while the console has power.</li>
+    <li><b>UART adapters must be set to 3.3&nbsp;V.</b> Connect only TX, RX and GND. Leave the adapter's VCC unconnected.</li>
+    <li><b>Check the chip's voltage.</b> PS5 NOR chips are 3.3&nbsp;V parts (Winbond W25Q16JV). If yours is marked as a 1.8&nbsp;V part, stop: it needs a 1.8&nbsp;V adapter.</li>
+    <li><b>Keep identities together.</b> Serial, motherboard serial, WiFi MAC and LAN MAC belong together. Don't mix them from different consoles.</li>
+  </ul>
+  <p>NOR Studio asks you to confirm the voltage the first time you connect each adapter, warns about 1.8&nbsp;V chips when it detects one, and asks before closing the page while a write is running.</p>
+
+  <h2 id="s3" style="break-before:page"><span class="n">3</span>Setting up</h2>
+  <p class="lede">No install, no admin rights. You need a desktop Chromium browser for the hardware features.</p>
+  <table>
+    <tr><th>What</th><th>Details</th></tr>
+    <tr><td>Browser</td><td>Desktop Chrome, Edge or Opera. UART and the programmer use Web Serial and WebUSB, which Firefox and Safari don't have. Those browsers can still use the NOR Editor and the error database.</td></tr>
+    <tr><td>Opening the app</td><td>Use the project's GitHub Pages address, or open <code>index.html</code> straight from disk. Once the error database has been downloaded, it works offline.</td></tr>
+    <tr><td>CH341A on Windows</td><td>Browsers can only talk to the CH341A through the WinUSB driver. Once: run Zadig, choose Options → List All Devices, select the CH341A (USB ID <code>1A86 5512</code>), pick WinUSB and click Replace Driver, then replug it. NeoProgrammer needs the original driver back afterwards.</td></tr>
+    <tr><td>CH341A on Linux</td><td>Add <code>SUBSYSTEM=="usb", ATTR{idVendor}=="1a86", ATTR{idProduct}=="5512", MODE="0666"</code> to <code>/etc/udev/rules.d/99-ch341a.rules</code>, reload udev and replug.</td></tr>
+    <tr><td>CH341A on macOS</td><td>Works as-is.</td></tr>
+    <tr><td>UART adapter</td><td>FT232R, CH340, CP2102 and similar work. If the adapter doesn't show up in the port picker, install its USB-serial driver and replug it.</td></tr>
+    <tr><td>Other programmers</td><td>XGecu T76 and similar: read and write with their own software, then open the <code>.bin</code> in the NOR Editor.</td></tr>
+  </table>
+</section>
+
+<section class="ch" id="s4">
+  <h2><span class="n">4</span>Finding your way around</h2>
+  <p class="lede">Six tabs across the top, with status pills on the right that show what's loaded and connected.</p>
+  <figure class="mid"><img src="jpg/nor-editor.jpg"><figcaption>The NOR Editor tab with a demo dump loaded. The pills at the top right show the loaded dump, the programmer, UART and the error database.</figcaption></figure>
+  <table>
+    <tr><th>Tab</th><th>Use it to</th></tr>
+    <tr><td>1 · NOR Editor</td><td>Open, inspect, check and edit a dump. Save a patched copy.</td></tr>
+    <tr><td>2 · Programmer</td><td>Read and write the NOR chip with a CH341A. Find a bad connection with the wiring check.</td></tr>
+    <tr><td>3 · UART</td><td>Read, decode and clear the console's error log. Send commands.</td></tr>
+    <tr><td>4 · Error Codes</td><td>Search the code database, update it, add your own notes.</td></tr>
+    <tr><td>5 · Hardware Guide</td><td>NOR and UART locations per board, CH341A wiring, and the 3 beeps troubleshooter.</td></tr>
+    <tr><td>6 · Help</td><td>Setup notes, the UART protocol, shortcuts and credits.</td></tr>
+  </table>
+  <h4>Shortcuts</h4>
+  <p><kbd>1</kbd>–<kbd>6</kbd> switch tabs · <kbd>Ctrl</kbd>+<kbd>O</kbd> open a dump · <kbd>Ctrl</kbd>+<kbd>S</kbd> save the patched dump · <kbd>/</kbd> search error codes</p>
+  <h4>The light bar</h4>
+  <p>A thin glow along the top edge shows what the app is doing, like the PS5's own light: blue while reading or writing, a white flash when something finishes, amber when something goes wrong.</p>
+  <h4>Demo mode</h4>
+  <p>The Programmer and UART tabs each have a <b>Demo</b> button. It simulates a CH341A with a chip, or a console with error codes, so you can learn the app without touching hardware.</p>
+</section>
+
+<section class="ch" id="s5">
+  <h2><span class="n">5</span>NOR Editor</h2>
+  <p class="lede">Open a dump, check it, change what you need, and save a new file. The original is never touched.</p>
+
+  <h3>Opening a dump</h3>
+  <p>Drag a <code>.bin</code> onto the page, press <kbd>Ctrl</kbd>+<kbd>O</kbd>, or click the drop area. A dump read with the Programmer tab opens here automatically. PS5 dumps are always 2&nbsp;MB.</p>
+  <p><b>Console information</b> shows what the dump says about its console: serial number, motherboard serial, model/SKU, region, board revision, WiFi and LAN MAC, Kiban ID, firmware versions, active slot and OS flags. Each row has a Copy button.</p>
+
+  <h3>Health check</h3>
+  <div class="cols">
+    <div>
+      <p>Every dump is checked as soon as it opens. Green ticks are fine. Amber marks something worth a look. A red cross means the dump is damaged or the read failed, and writing it is blocked.</p>
+      <table>
+        <tr><th>Check</th><th>What a problem means</th></tr>
+        <tr><td>Size, header, MBR</td><td>Not a PS5 NOR, or the read failed.</td></tr>
+        <tr><td>Blank dump</td><td>Every byte is the same: the programmer read nothing.</td></tr>
+        <tr><td>EAP key magics</td><td>The NVS area may be corrupted.</td></tr>
+        <tr><td>Identity header 0x30</td><td>A backup read from a failing chip. A NOR carrying this beeps 3 times.</td></tr>
+        <tr><td>Error log</td><td>Shows the log stored in the dump. A donor with APU, power or thermal faults came from a sick console.</td></tr>
+        <tr><td>Firmware containers</td><td>Damaged firmware blocks.</td></tr>
+        <tr><td>MAC block, OS flags</td><td>Copies that should match don't.</td></tr>
+      </table>
+    </div>
+    <figure style="margin-top:0"><img src="jpg/checks.jpg"><figcaption>A healthy dump.</figcaption></figure>
+  </div>
+
+  <h3>Editing</h3>
+  <ul>
+    <li><b>Edition:</b> switch between Disc and Digital. The SKU's A/B letter flips with it unless you untick that option. Slim dumps have a single edition flag, so switching is turned off for them.</li>
+    <li><b>Model / SKU:</b> type it, or use <b>Choose…</b> to pick from the models that fit the dump. Slim models keep their space, for example <code>CFI-2015 A01X</code>. The app warns you if the new SKU is a different length from the old one.</li>
+    <li><b>Console serial number:</b> the serial on the console's label.</li>
+    <li><b>Advanced:</b> motherboard serial, WiFi MAC and OS flags (IDU, manufacturing mode, boot messages, memory tests). The WiFi MAC is a block of three addresses in a row, and the app keeps them in step. The LAN MAC can't be edited by hand, because it has check bytes (see below).</li>
+  </ul>
+
+  <h3>Restore identity from original dump</h3>
+  <p>Use this when you're putting a donor NOR into your console. Open the donor dump, press <b>Choose original dump…</b> and pick your console's own backup. Tick what to copy (serial, motherboard serial, SKU, the board ID and LAN MAC block with its check bytes, Kiban ID, WiFi MAC block) and press Apply.</p>
+  <div class="note"><b>Why not edit the fields one by one?</b>The LAN MAC is followed by two check bytes. Changing the MAC without them makes the console beep 3 times. Restore identity copies the whole block exactly. If your backup has a corrupted identity header byte, it keeps the donor's good <code>0x30</code> and tells you.</div>
+
+  <h3>Changes to be written, and saving</h3>
+  <div class="cols">
+    <div>
+      <p>Every edit shows up in <b>Changes to be written</b>: each field, every location it's stored, and a byte-level diff. Press <b>Reset</b> to undo everything.</p>
+      <p><b>Save patched dump</b> (<kbd>Ctrl</kbd>+<kbd>S</kbd>) downloads a new file named after the console's serial and model. The app checks the edits first and asks you to confirm anything unusual, such as a changed SKU length.</p>
+      <p><b>Compare…</b> loads a second dump and lists every byte that differs, grouped by area. Use it to check a write, or to see what a tool changed.</p>
+    </div>
+    <figure style="margin-top:0"><img src="jpg/diff.jpg"><figcaption>The byte diff after changing the edition and serial.</figcaption></figure>
+  </div>
+</section>
+
+<section class="ch" id="s6">
+  <h2><span class="n">6</span>Programmer (CH341A)</h2>
+  <p class="lede">Read the NOR chip into the editor, and write a dump back, with a 3.3 V-modded CH341A.</p>
+  <figure class="mid"><img src="jpg/programmer-tab.jpg"><figcaption>The Programmer tab after reading a chip in demo mode.</figcaption></figure>
+
+  <h3>Connecting</h3>
+  <ol class="steps">
+    <li>Wire or clip the CH341A to the NOR (see the Hardware Guide tab, or section 10). Console unplugged.</li>
+    <li>Press <b>Connect</b> and choose the CH341A. The first time, confirm that it has the 3.3&nbsp;V mod.</li>
+    <li>The app reads the chip's ID and shows the maker, size and voltage. PS5 chips read <code>EF 40 15</code> (Winbond W25Q16JV, 3.3&nbsp;V).</li>
+  </ol>
+  <figure class="mid"><img src="jpg/chip.jpg"><figcaption>A detected chip. "Check wiring" opens the wiring check at any time.</figcaption></figure>
+
+  <h3>Reading</h3>
+  <p>Press <b>Read chip</b>. The app reads the whole chip twice and compares the two reads, so a loose clip can't slip a bad backup past you. The result opens in the NOR Editor. Press <b>Save backup</b> straight away.</p>
+
+  <h3>Writing</h3>
+  <p>Open or edit the dump you want in the NOR Editor, then press <b>Write to chip</b>. You choose how:</p>
+  <div class="cols">
+    <div>
+      <ul>
+        <li><b>Read first (recommended):</b> reads the chip, saves a backup automatically, then rewrites only the 4&nbsp;KB sectors that changed. Fast and safe.</li>
+        <li><b>Write without reading:</b> erases and rewrites the whole chip with no backup. Use it only when the chip can't be read or you already have a backup. The app warns you clearly before going ahead.</li>
+      </ul>
+      <p>Either way, the app removes the chip's write protection if it's set, then verifies the whole chip afterwards. The terminal scrolls into view when a job starts. <b>Cancel</b> stops between sectors.</p>
+    </div>
+    <figure style="margin-top:0"><img src="jpg/writechoice.jpg"><figcaption>Choosing how to write.</figcaption></figure>
+  </div>
+  <div class="note warn"><b>Don't unplug anything while writing.</b>A half-written NOR can stop a console booting. The app asks for confirmation if you try to close the page mid-write.</div>
+</section>
+
+<section class="ch" id="s7">
+  <h2><span class="n">7</span>Wiring check</h2>
+  <p class="lede">When the chip doesn't answer, this finds out which connection is the problem.</p>
+  <h3>Automatic diagnosis</h3>
+  <p>If the chip ID fails, the app reads it several more times and sends a wake-up command, in case the chip is in power-down mode. Then it explains what the reading means:</p>
+  <table>
+    <tr><th>Reading</th><th>Meaning</th></tr>
+    <tr><td class="m">FF FF FF</td><td>MISO stuck high: the chip never answered. CS, VCC, GND, MISO, MOSI, or HOLD held low. With nothing connected, this reading is normal.</td></tr>
+    <tr><td class="m">00 00 00</td><td>MISO stuck low: usually no power or no GND, or MISO shorted to ground.</td></tr>
+    <tr><td>Off by one bit</td><td>For example <code>DE 80 2A</code>. The chip answers, but clock and data are out of step: long or loose wires, especially CLK.</td></tr>
+    <tr><td>Changes between reads</td><td>A loose or intermittent contact.</td></tr>
+  </table>
+  <figure class="mid"><img src="jpg/diag.jpg"><figcaption>The diagnosis for a chip that never answers.</figcaption></figure>
+
+  <h3>Find the bad connection</h3>
+  <div class="cols">
+    <div>
+      <p>Press <b>Find the bad connection</b>. You'll need a multimeter, and you should measure on the chip's own legs, not on the clip. It goes through each connection in turn:</p>
+      <ol>
+        <li><b>GND → pin 4:</b> continuity beep.</li>
+        <li><b>VCC → pin 8:</b> 2.7 to 3.6&nbsp;V is fine. Lower means the board is loading the supply.</li>
+        <li><b>HOLD (pin 7) and WP (pin 3):</b> both should be about 3&nbsp;V. A low HOLD makes the chip ignore everything.</li>
+        <li><b>CS, CLK, MOSI:</b> the app switches each pin high and low while you check that the chip's leg follows.</li>
+        <li><b>MISO → pin 2:</b> the app shows the line live while you briefly bridge pin 2 to pin 4. It passes on its own when the reading drops and comes back.</li>
+      </ol>
+      <p>At the end it names the connection that failed and how to fix it, with a <b>Retry chip ID</b> button.</p>
+    </div>
+    <figure style="margin-top:0"><img src="jpg/wiring-check.jpg"><figcaption>Mid-check: the app is holding CS high.</figcaption></figure>
+  </div>
+  <div class="note"><b>If everything passes and the chip still reads FF FF FF</b>In-circuit, the board can interfere, because the NOR shares its 3.3&nbsp;V supply with the southbridge. On EDM-010/020, hold JL5110 to GND, or lift pin 8. If it still won't read, take the chip off and read it in an SOP8 adapter. If it fails there too, the chip is dead.</div>
+</section>
+
+<section class="ch" id="s8">
+  <h2><span class="n">8</span>UART diagnostics</h2>
+  <p class="lede">The console's service port gives you its error log. UART can't read or write the NOR; it only talks to the console.</p>
+  <figure class="mid"><img src="jpg/uart-tab.jpg"><figcaption>Error codes read from the demo console, with decoded details and the terminal.</figcaption></figure>
+  <h3>Connecting</h3>
+  <ol class="steps">
+    <li>Wire adapter TX → PS5 RX, adapter RX → PS5 TX, and GND. Adapter at 3.3&nbsp;V, VCC not connected. Pad locations are in the Hardware Guide tab.</li>
+    <li>Plug the console into the wall but don't switch it on. UART works in standby.</li>
+    <li>Press <b>Connect</b> (115200 baud) and choose the adapter. When the console's banner <code>$$ [MANU] UART CMD READY</code> appears, the app shows <b>PS5 detected</b>. <b>Detect console</b> wakes a quiet console.</li>
+  </ol>
+  <h3>Reading and clearing codes</h3>
+  <ul>
+    <li><b>Read error codes</b> reads every slot until the end of the log. Each entry shows the code, its description, and decoded details: power state, OS state, boot cause, active devices, SoC and ambient temperatures, and time since the newest entry. <b>Hide duplicates</b> folds repeats together.</li>
+    <li><b>Clear error log</b> empties the log. Then unplug for 10 seconds, plug back in and read again: what appears now is new.</li>
+    <li><b>Export report</b> saves a text report you can share on forums.</li>
+  </ul>
+  <div class="note warn"><b>Codes tagged "In loaded dump" aren't this console's</b>The error log is stored on the NOR. After writing a donor dump, its previous owner's history comes along. When the same dump is open in the NOR Editor, the app tags those entries and says so. Clear the log to see only your console's own codes.</div>
+  <h3>Terminal</h3>
+  <p>Type a command and press <b>Send</b>. The checksum the console needs is added automatically (for example <code>errlog 0</code> becomes <code>errlog 0:BA</code>). Use the arrow keys for history. <b>Run list…</b> sends a list of commands one after another. <b>Save log</b> keeps a copy of the session.</p>
+  <p>Unplugging the console doesn't disconnect UART: the terminal notes the interruption and keeps listening, so the banner appears again when you plug back in.</p>
+</section>
+
+<section class="ch" id="s9">
+  <h2><span class="n">9</span>Error code database</h2>
+  <p class="lede">Over 430 exact codes and 30 code families, searchable, with your own notes.</p>
+  <figure class="mid"><img src="jpg/error-codes.jpg"><figcaption>The Error Codes tab.</figcaption></figure>
+  <ul>
+    <li><b>Search</b> by code or by words in the description. Press <kbd>/</kbd> from anywhere.</li>
+    <li><b>Update:</b> pick a source and press <b>Download / update</b>. The default is Console Service Tool's list, fetched over HTTPS and stored in your browser for offline use.</li>
+    <li><b>Import:</b> the old <code>errorDB.xml</code> from PS5 NOR Modifier, Console Service Tool's JSON, or a CSV.</li>
+    <li><b>Your notes:</b> add a fix note to any code. It appears next to that code whenever you read the log. Export your notes to back them up.</li>
+  </ul>
+  <div class="note"><b>Why did PS5 NOR Modifier say "database download error"?</b>It downloaded from a plain-HTTP address that no longer serves the database, and it hid the real error. NOR Studio uses a maintained HTTPS source and lets you import a file if you're offline.</div>
+
+  <h2 id="s10" style="break-before:page"><span class="n">10</span>Hardware guide</h2>
+  <p class="lede">Where the NOR and UART points are on each board, and how to wire them.</p>
+  <table>
+    <tr><th>Section</th><th>What's in it</th></tr>
+    <tr><td>EDM-010 / 020</td><td>NOR IC5001 pinout and UART pads JL5101–JL5110, in real board orientation, from Sony's service manuals.</td></tr>
+    <tr><td>EDM-03x</td><td>UART pads near F5402 and NOR notes.</td></tr>
+    <tr><td>EDM-04x+ (Slim)</td><td>UART pad map, and photos of the NOR (W25Q16JV, next to the southbridge, pin 1 dot lower left) from an EDM-041.</td></tr>
+    <tr><td>CH341A wiring</td><td>Wiring the programmer straight to the chip, with labels on the chip diagram. You can turn the labels off.</td></tr>
+    <tr><td>3 beeps</td><td>The troubleshooter in section 12, plus donor dump advice.</td></tr>
+  </table>
+  <h3>CH341A to the chip</h3>
+  <div class="cols keep">
+    <table>
+      <tr><th>CH341A</th><th>Chip pin</th></tr>
+      <tr><td>CS</td><td>1 (CS#)</td></tr>
+      <tr><td>MISO</td><td>2 (DO)</td></tr>
+      <tr><td>GND</td><td>4</td></tr>
+      <tr><td>MOSI</td><td>5 (DI)</td></tr>
+      <tr><td>CLK</td><td>6</td></tr>
+      <tr><td>VCC 3.3&nbsp;V</td><td>8</td></tr>
+    </table>
+    <div>
+      <p><b>Why the names don't match:</b> SPI is named from the programmer's side. MISO goes to the chip's output (DO), MOSI to its input (DI). Don't cross them like UART's TX and RX.</p>
+      <p>Pins 3 (WP) and 7 (HOLD) must be high. A clip on the CH341A's socket ties them high for you. With direct wires, the board's pull-ups do it. If pin 7 reads 0&nbsp;V, add a jumper from pin 7 to pin 8.</p>
+      <p><b>Powered-board method:</b> with the console in standby, the NOR already has 3.3&nbsp;V, so leave the VCC wire off. On EDM-010/020, hold the southbridge in reset (JL5110 to GND) so it doesn't use the chip at the same time.</p>
+    </div>
+  </div>
+</section>
+
+<section class="ch" id="s11">
+  <h2><span class="n">11</span>Common jobs, step by step</h2>
+  <p class="lede">The usual workflows from start to finish.</p>
+
+  <h3>Back up a console's NOR</h3>
+  <ol class="steps">
+    <li>Console unplugged. Clip or wire the CH341A to the NOR.</li>
+    <li>Programmer tab → <b>Connect</b>. Check the chip reads <code>EF 40 15</code>.</li>
+    <li><b>Read chip</b>, then <b>Save backup</b>. Check the health check in the NOR Editor is all green.</li>
+    <li>Store the file somewhere safe. Never share it: it contains your console's identity.</li>
+  </ol>
+
+  <h3>Switch Disc ↔ Digital (launch models)</h3>
+  <ol class="steps">
+    <li>Back up the NOR as above.</li>
+    <li>NOR Editor → Edition → Disc or Digital. Check the SKU letter changed with it.</li>
+    <li>Look over the byte diff, then <b>Write to chip</b> → <b>Read first</b>.</li>
+  </ol>
+
+  <h3>Revive a console with a dead NOR</h3>
+  <ol class="steps">
+    <li>Confirm the chip is dead: read it off the board in an SOP8 adapter. If it reads there, the chip is fine.</li>
+    <li>Get a new W25Q16JV (same marking, SOIC-8) and a donor dump for the same board family. See section 12 for vetting donors.</li>
+    <li>Open the donor dump in the NOR Editor. Press <b>Choose original dump…</b> and pick your console's own backup. Apply, check the diff, save.</li>
+    <li>Write the result to the new chip in an adapter, and let the app verify it. Then solder it on, pin 1 matching the board's dot.</li>
+    <li>Plug in with UART connected. Clear the log, unplug for 10 seconds, plug in again and read the codes.</li>
+  </ol>
+
+  <h3>Diagnose a console with UART</h3>
+  <ol class="steps">
+    <li>Connect UART with the console in standby. Read the codes and export a report.</li>
+    <li>Clear the log. Unplug for 10 seconds, plug back in without switching on, and read: these are standby faults.</li>
+    <li>Press power once, wait for it to fail, and read again: these are power-on faults.</li>
+    <li>Look each code up. Add a note to the code once you've found the fix.</li>
+  </ol>
+</section>
+
+<section class="ch" id="s12">
+  <h2><span class="n">12</span>3 beeps on plug-in</h2>
+  <p class="lede">The southbridge checks the NOR before anything else powers up. If it doesn't like what it finds, it beeps three times and stops.</p>
+  <h3>Work through these in order</h3>
+  <ol class="steps">
+    <li><b>Connect UART and plug in.</b> If the banner appears, the southbridge is running and reading the NOR, so the NOR's contents are the problem. No banner at all points to a missing or dead NOR, or the southbridge.</li>
+    <li><b>Read the codes, then clear the log.</b> Unplug for 10 seconds and plug back in without pressing power. A full log can cause the beeps on its own.</li>
+    <li><b>Written a donor dump? Those codes aren't yours.</b> They came with the dump. They're tagged "In loaded dump" when the same dump is open in the NOR Editor.</li>
+    <li><b>Check the dump in the NOR Editor.</b> Look for "Identity block starts with … instead of 0x30".</li>
+    <li><b>Rebuild with Restore identity,</b> not by editing fields one at a time, so the LAN MAC check bytes come along.</li>
+    <li><b>Read the chip back while it's on the board</b> and use Compare against the file you wrote. A perfect match rules out the soldering and the write.</li>
+    <li><b>Beeps only when you press power?</b> That's a different fault. Check the power/eject button board's flex cable first.</li>
+  </ol>
+  <div class="note"><b>A real case: EDM-041 Slim</b>The NOR chip died. A new chip with the console's own backup still beeped, and so did a donor dump with the console's identity copied in. Writing the donor unmodified booted, which proved the board was fine. Every UART code had come with the donor dump. The console's own backup had <code>00</code> at 0x1C4000 instead of <code>30</code>, corrupted by the dying chip. Donor dump + own identity + <code>30</code> booted on the console's own serial and MACs.</div>
+
+  <h3>Finding and vetting a donor dump</h3>
+  <p>NOR Studio doesn't host dumps: each one contains Sony's firmware and another console's serial, MACs and keys. Repair forums share them in their firmware threads, for example BadCaps and TronicsFix. Before using one:</p>
+  <ul>
+    <li><b>Same board family:</b> Slim for Slim (EDM-04x), launch for launch (EDM-010/020), EDM-03x for EDM-03x.</li>
+    <li><b>Clean health check:</b> no failed checks, identity header 0x30.</li>
+    <li><b>Look at its error log:</b> APU, power or thermal faults mean that console was faulty. The data can still be fine, but a clean log is safer.</li>
+    <li><b>Keep an untouched copy,</b> so a failed rebuild can be told apart from a bad board.</li>
+  </ul>
+  <div class="note warn"><b>Put your own identity back</b>A donor written as-is makes your console that other console: same serial, same MACs. Anything tied to that serial, like a PSN ban, applies to both. Use Restore identity with your own backup before using the console.</div>
+</section>
+
+<section class="ch" id="s13">
+  <h2><span class="n">13</span>Troubleshooting</h2>
+  <p class="lede">Quick answers to the problems people hit most.</p>
+  <table>
+    <tr><th>Problem</th><th>What to do</th></tr>
+    <tr><td>CH341A doesn't appear in the picker</td><td>Windows: install WinUSB with Zadig (section 3). Linux: add the udev rule. Close other programmer software.</td></tr>
+    <tr><td>Chip ID reads FF FF FF</td><td>Run the wiring check (section 7). Check MISO/MOSI aren't swapped, CS reaches pin 1, and pin 7 isn't low. In-circuit, try chip-off.</td></tr>
+    <tr><td>Chip ID changes between reads</td><td>Loose contact. Reseat the clip, or use shorter soldered wires.</td></tr>
+    <tr><td>Programmer 3.3&nbsp;V drops to about 3.0&nbsp;V when connected</td><td>Fine for the chip (it runs from 2.7&nbsp;V). In-circuit, the board is drawing current through the NOR's supply.</td></tr>
+    <tr><td>Read and verify don't match</td><td>Bad contact during the read. Fix the wiring and read again. Never write a dump that failed its health check.</td></tr>
+    <tr><td>UART: no reply</td><td>Swap TX and RX first. Check common ground, 3.3&nbsp;V logic, that the console is plugged in, and fuse F7003.</td></tr>
+    <tr><td>UART: "port is busy"</td><td>Close other serial apps (PS5 NOR Modifier, PuTTY, Arduino IDE). NOR Studio releases the port properly when the connection drops.</td></tr>
+    <tr><td>"Database download error" in the old app</td><td>Use NOR Studio's database (section 9).</td></tr>
+    <tr><td>3 beeps on plug-in</td><td>Section 12.</td></tr>
+    <tr><td>Console boots but shows another serial</td><td>A donor dump was written as-is. Restore your own identity (section 12).</td></tr>
+  </table>
+
+  <h2 style="margin-top:30px" id="s14"><span class="n">14</span>Credits and license</h2>
+  <p>Part of NOR Studio's code and logic comes from <b>PS5 NOR Modifier by TheCod3r</b> (GPL-2.0): the NOR offsets, edition flags, UART command format and checksum. It was rebuilt and extended with the help of AI assistance. Improvements, extra features and ideas by <b>The Goat Tech</b>.</p>
+  <p>NOR offsets cross-checked against <b>ps5-wee-tools</b> by andy-man. Error code data (loaded at runtime), error-log field meanings, OS flag layout and UART reference photos: <b>Console Service Tool</b> by amoamare. Hardware details for EDM-010/020 come from Sony's board service manuals. IBM Plex Mono is used under the SIL Open Font License.</p>
+  <p>NOR Studio is licensed under the GNU General Public License v2.0. It's provided as-is, without warranty of any kind. Modifying or flashing a NOR can permanently damage a console, and you use it at your own risk. Unofficial tool, not affiliated with or endorsed by Sony Interactive Entertainment. PlayStation and PS5 are trademarks of Sony Interactive Entertainment.</p>
+</section>
+</body></html>

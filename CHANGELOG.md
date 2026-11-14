@@ -3,6 +3,7 @@
 ## v1.2.0
 
 ### Added
+- **User manual (PDF)** in `docs/NOR-Studio-Manual.pdf`: safety, setup, every tab, step-by-step jobs, the 3 beeps troubleshooter and troubleshooting. Its source is in `docs/manual-src/` and rebuilds with `build_manual.py`.
 - **3 beeps troubleshooter** in the Hardware Guide tab: the order to check things in when a console beeps three times on plug-in, the EDM-041 case it came from, how to vet a donor dump, and how to put your own identity back.
 - The NOR Editor health check reads the dump's own error log. A donor whose log shows APU, power-sequence or thermal faults gets a warning, so you know that console was faulty and that those codes aren't yours.
 - Health check for the identity header byte at 0x1C4000. It's 0x30 in every known-good dump. A different value usually means the chip was failing when the dump was read, and a NOR carrying it gives 3 beeps as soon as the console is plugged in. Found while reviving an EDM-041: its own backup had 0x00 there, and fixing that one byte made it boot with its own identity.

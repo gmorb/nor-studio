@@ -206,6 +206,10 @@ mark{background:rgba(47,143,255,.35);color:#fff;border-radius:3px;padding:0 2px}
 .adv summary::-webkit-details-marker{display:none}
 .adv summary::before{content:'▸';margin-right:8px;color:var(--muted);transition:transform .2s var(--ease-out)}.adv[open] summary::before{transform:rotate(90deg)}
 .flaggrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.skurow{display:flex;gap:8px}
+.skurow input{flex:1;min-width:0}
+.skurow select{width:auto;flex:0 0 auto;max-width:46%}
+.proghead{min-height:34px;margin-bottom:14px}
 .prog{height:8px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden}
 .prog .bar{height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--blue2));border-radius:99px;transition:width .2s linear;box-shadow:0 0 14px var(--glow)}
 .prog .bar.bad{background:var(--bad);box-shadow:none}
@@ -348,8 +352,10 @@ h1,h2,h3{text-wrap:balance}
 
         <div style="height:10px"></div>
         <label class="f" for="inSku">Model / SKU</label>
-        <input type="text" id="inSku" class="mono" list="skuList" maxlength="13" spellcheck="false" autocomplete="off">
-        <datalist id="skuList"></datalist>
+        <div class="skurow">
+          <input type="text" id="inSku" class="mono" maxlength="13" spellcheck="false" autocomplete="off">
+          <select id="skuPick" aria-label="Choose a model number"><option value="">Choose…</option></select>
+        </div>
         <div class="hint" id="skuHint"></div>
 
         <label class="f" for="inSerial">Console serial number</label>
@@ -454,7 +460,7 @@ h1,h2,h3{text-wrap:balance}
 
     <div class="grid" style="align-content:start">
       <div class="card">
-        <div class="row"><h2>Progress</h2><span class="spacer"></span><button class="btn sm danger hidden" id="btnFlashCancel">Cancel</button></div>
+        <div class="row proghead" id="progCard"><h2 style="margin:0">Progress</h2><span class="spacer"></span><button class="btn sm danger hidden" id="btnFlashCancel">Cancel</button></div>
         <div class="prog"><div class="bar" id="progBar"></div></div>
         <div class="row" style="margin-top:8px;font-size:12.5px;color:var(--muted)"><span id="progStage">Idle</span><span class="spacer"></span><span id="progStats" style="font-family:var(--mono)"></span></div>
         <div class="term" id="flashLog" style="height:220px;margin-top:14px"></div>
@@ -1146,11 +1152,19 @@ const NOR = {
 
 /* ============================================================ NOR UI */
 const nor = { file:null, u8:null, info:null, edits:{}, result:null };
-const SKUS = (() => {
-  const s=new Set(["CFI-1000A","CFI-1000B","CFI-1002A","CFI-1008A","CFI-1014A","CFI-1015A","CFI-1015B","CFI-1016A","CFI-1016B","CFI-1018A","CFI-1102A","CFI-1108A","CFI-1109A","CFI-1114A","CFI-1115A","CFI-1115B","CFI-1116A","CFI-1116B","CFI-1118A","CFI-1202A","CFI-1208A","CFI-1215A","CFI-1215B","CFI-1216A","CFI-1216B","CFI-1218A"]);
-  return [...s];
-})();
-$('#skuList').innerHTML = SKUS.map(s=>`<option value="${s}">`).join('');
+/* model picker: same series and format as the loaded dump, every known region, A (disc) and B (digital) */
+const REGION_ORDER=['00','01','15','02','03','04','16','05','06','07','08','09','11','14','18'];
+function skuOptions(sku){
+  const m=/^(CFI-\d{2})(\d{2})(\s?)([AB])(.*)$/.exec(sku||''); if(!m) return [];
+  const [,series,,sp,,rest]=m;
+  return REGION_ORDER.map(rr=>({rr, name:NOR.REGIONS[rr], opts:['A','B'].map(l=>({v:`${series}${rr}${sp}${l}${rest}`, l}))}));
+}
+function buildSkuPicker(){
+  const groups=skuOptions(nor.info?.sku), sel=$('#skuPick');
+  sel.disabled=!groups.length;
+  sel.innerHTML='<option value="">'+(groups.length?'Choose…':'No list for this model')+'</option>'+groups.map(g=>`<optgroup label="${esc(g.rr+' · '+g.name)}">${g.opts.map(o=>`<option value="${esc(o.v)}">${esc(o.v)} · ${o.l==='A'?'disc':'digital'}</option>`).join('')}</optgroup>`).join('');
+}
+$('#skuPick').addEventListener('change',e=>{ const v=e.target.value; if(!v) return; $('#inSku').value=v; nor.edits.sku=v; e.target.value=''; renderEdits(); });
 
 async function openNor(file){
   if (!file) return;
@@ -1165,7 +1179,7 @@ async function openNor(file){
   $('#fileMeta').textContent=`${u8.length.toLocaleString()} bytes · computing hashes…`;
   ['infoCard','editCard','checksCard'].forEach(id=>$('#'+id).classList.remove('hidden'));
   $('#norEmptyCard').classList.add('hidden'); $('#compareCard').classList.add('hidden');
-  buildAdvanced(); renderInfo(); renderChecks(); renderEdits(); updatePills();
+  buildAdvanced(); buildSkuPicker(); renderInfo(); renderChecks(); renderEdits(); updatePills();
   const m = md5(u8), s = await sha256(u8);
   nor.hashes={md5:m, sha256:s};
   $('#fileMeta').textContent=`${(u8.length/1048576).toFixed(2)} MB · MD5 ${m}`;
@@ -1835,7 +1849,7 @@ function progress(stage, done, total){
   if (stage!==progLabel){ progLabel=stage; progT0=performance.now(); }
   $('#progStage').textContent=stage; const pct= total? done/total*100 : 0; $('#progBar').style.width=pct.toFixed(1)+'%';
   const secs=(performance.now()-progT0)/1000, rate=secs>0.2?done/secs:0, eta=rate?(total-done)/rate:0;
-  $('#progStats').textContent = total ? `${(done/1024).toFixed(0)} / ${(total/1024).toFixed(0)} KB · ${rate?(rate/1024).toFixed(1)+' KB/s':'…'}${rate&&done<total?` · ${Math.ceil(eta)}s left`:''}` : '';
+  $('#progStats').textContent = total ? `${(done/1024).toFixed(0)} / ${(total/1024).toFixed(0)} KB${rate?` · ${(rate/1024).toFixed(1)} KB/s`:''}${rate&&done<total?` · ${Math.ceil(eta)}s left`:''}` : '';
 }
 function progDone(msg, ok=true){ progLabel=''; $('#progStage').textContent=msg; $('#progBar').style.width=ok?'100%':'0%'; $('#progBar').classList.toggle('bad',!ok); $('#progStats').textContent=''; }
 function setFlashUi(){
@@ -1913,6 +1927,10 @@ async function readAll(stage){
   return out;
 }
 const firstDiff = (a,b) => { for (let i=0;i<a.length;i++) if (a[i]!==b[i]) return i; return -1; };
+function showProgress(){
+  const card=$('#progCard').closest('.card'), r=card.getBoundingClientRect();
+  if (r.top<0 || r.bottom>window.innerHeight) card.scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth', block:r.height>window.innerHeight?'start':'center'});
+}
 async function runOp(fn){
   if (prog.busy) return; prog.busy=true; prog.cancel=false; $('#progBar').classList.remove('bad'); setFlashUi();
   try { await fn(); }
@@ -1920,6 +1938,7 @@ async function runOp(fn){
   finally { prog.busy=false; setFlashUi(); }
 }
 function readChip(){ return runOp(async()=>{
+  showProgress();
   flog('tx','Reading chip…');
   const a=await readAll('Reading');
   if ($('#chkReadTwice').checked){
@@ -1942,6 +1961,7 @@ function saveBackup(data=prog.lastRead){
 }
 function writeChip(){ return runOp(async()=>{
   const img=writeImage().slice(), imgInfo=NOR.parse(img), fname=nor.file.name;
+  showProgress();
   flog('tx','Reading current chip contents…');
   const cur=await readAll('Reading current contents'), curInfo=NOR.parse(cur);
   if (!prog.backupSaved || !prog.lastRead || firstDiff(prog.lastRead,cur)>=0){ saveBackup(cur); }
@@ -1955,6 +1975,7 @@ function writeChip(){ return runOp(async()=>{
   if (curInfo.wifiMac!==imgInfo.wifiMac && !/^(FF:){5}FF$/.test(curInfo.wifiMac)) warn.push(`WiFi MAC differs (${curInfo.wifiMac} → ${imgInfo.wifiMac}).`);
   const msg=`${changed.length} of ${prog.size/SEC} sectors (${changed.length*4} KB) will be erased and rewritten from "${fname}". A backup of the current chip was just saved.` + (warn.length?'\n\n⚠ '+warn.join('\n⚠ '):'');
   if (!await confirmBox(warn.length?'Write anyway?':'Write to chip?', msg, warn.length?'Write anyway':'Write', true)) { progDone('Write cancelled', false); return flog('sys','Write cancelled.'); }
+  showProgress();
   prog.cancel=false;
   const st=await prog.flash.unprotect(); flog('sys',`Status register ${hx(st,2)} — unlocked`);
   let done=0; const total=changed.length*SEC;

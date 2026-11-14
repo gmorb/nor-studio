@@ -13,6 +13,10 @@
   <b>Read, repair and rewrite PS5 NOR dumps, flash them with a CH341A, and decode UART error codes,<br>all from one page in your browser.</b>
 </p>
 
+<p align="center">
+  <a href="https://www.buymeacoffee.com/Gmorb" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" height="45"></a>
+</p>
+
 ---
 
 ## ✨ Highlights
@@ -111,6 +115,14 @@ NOR Studio is an unofficial tool and is **not affiliated with or endorsed by Son
 - Improvements, extra features and ideas by **The Goat Tech**.
 - NOR layout cross‑checked against [ps5‑wee‑tools](https://github.com/andy-man/ps5-wee-tools) by andy‑man.
 - [Console Service Tool](https://github.com/amoamare/Console-Service-Tool) by amoamare: the error code data (loaded at runtime), the documented error‑log field meanings, OS flag layout and UART reference photos, which are linked rather than copied.
+
+## ☕ Support the project
+
+NOR Studio is free and built in my spare time. If it saved a console, a coffee helps cover the costs of maintaining it, such as the **hardware** for testing and confirming board revisions like the EDM‑041 NOR, and the **time** I spend on fixes and new features.
+
+<a href="https://www.buymeacoffee.com/Gmorb" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" height="45"></a>
+
+Every donation is appreciated, and the tool will always stay free. Thank you!
 
 ## 📄 License
 

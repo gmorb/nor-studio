@@ -471,7 +471,7 @@ h1,h2,h3{text-wrap:balance}
 
       <div class="card hidden" id="wcCard">
         <div class="row"><h2>Wiring check</h2><span class="spacer"></span><button class="btn sm ghost" id="wcClose">Close</button></div>
-        <p class="sub">Tests the six CH341A connections one at a time. You'll need a multimeter. Keep the console unplugged. Measure on the chip's own legs, not on the clip.</p>
+        <p class="sub">Tests each CH341A connection one at a time, plus the chip's HOLD and WP pins. You'll need a multimeter. Keep the console unplugged. Measure on the chip's own legs, not on the clip.</p>
         <div id="wcBody"></div>
       </div>
 
@@ -1958,9 +1958,14 @@ const WC_STEPS=[
    pass:'It beeps', fail:'No beep', fix:'GND isn\'t reaching pin 4. Reseat the clip, or re-solder the GND wire to pin 4.'},
   {k:'vcc',  wire:'VCC 3.3 V', pin:8, kind:'volts',
    how:'Set the multimeter to DC volts. Black probe on chip <b>pin 4</b> (GND), red probe on chip <b>pin 8</b> (VCC).',
-   opts:[['ok','About 3.3 V'],['sag','Between 1 and 3 V'],['zero','About 0 V']],
+   opts:[['ok','2.7 to 3.6 V'],['sag','Between 1 and 2.7 V'],['zero','About 0 V']],
    fixes:{sag:'The board is pulling the 3.3 V rail down. In-circuit, that rail also feeds the southbridge. Hold JL5110 to GND (EDM-010/020), lift pin 8 off the board, or take the chip off.',
           zero:'No 3.3 V at pin 8. Check the VCC wire to pin 8, and that your CH341A is set to 3.3 V. Never connect VCC while the console is plugged in.'}},
+  {k:'hold', wire:'HOLD and WP', pin:'7 and 3', kind:'volts',
+   how:'Still in DC volts with the black probe on pin 4: measure chip <b>pin 7</b> (HOLD), then <b>pin 3</b> (WP). If HOLD is low, the chip ignores every command and MISO reads FF, even with perfect wiring.',
+   opts:[['ok','Both about 3 V'],['hold','Pin 7 is about 0 V'],['wp','Only pin 3 is about 0 V']],
+   fixes:{hold:'HOLD (pin 7) is low, so the chip won\'t answer. Add a jumper from pin 7 to pin 8 (VCC), then retry.',
+          wp:'WP (pin 3) is low. Reading still works, but writing will fail. Add a jumper from pin 3 to pin 8 (VCC) before writing.'}},
   {k:'cs',   wire:'CS',   pin:1, kind:'drive', bit:'cs',  decisive:'LOW',  note:'The board has a pull-up on this pin, so <b>LOW</b> is the reading that proves the wire.'},
   {k:'clk',  wire:'CLK',  pin:6, kind:'drive', bit:'clk', decisive:'HIGH', note:'Nothing else drives this pin, so <b>HIGH</b> is the reading that proves the wire.'},
   {k:'mosi', wire:'MOSI', pin:5, kind:'drive', bit:'mosi',decisive:'LOW',  note:'Check both readings. MOSI goes to the chip\'s <b>DI</b> (pin 5), not DO.'},
@@ -2013,14 +2018,14 @@ function wcRender(){
       const fix = st.kind==='volts' ? st.fixes[r] : st.kind==='drive' ? `${st.wire} isn't reaching pin ${st.pin}. Reseat the clip, or re-solder the ${st.wire} wire to pin ${st.pin}.` : st.kind==='miso' ? 'MISO isn\'t reaching pin 2. MISO goes to the chip\'s DO (pin 2), not DI (pin 5). If the reading stayed LOW the whole time, something is holding pin 2 low. In-circuit, that can be the southbridge: hold JL5110 to GND.' : st.fix;
       inner=`<div class="fix">${fix}</div>`;
     }
-    return `<div class="wcstep ${cur?'cur':''}"><div class="wh"><span>${idx+1}. ${st.wire} → chip pin ${st.pin}</span>${tag}</div>${inner}</div>`;
+    return `<div class="wcstep ${cur?'cur':''}"><div class="wh"><span>${idx+1}. ${st.wire} → chip ${typeof st.pin==='string'?'pins':'pin'} ${st.pin}</span>${tag}</div>${inner}</div>`;
   }).join('');
   let sum='';
   if (wc.i>=WC_STEPS.length){
     const bad=WC_STEPS.filter(st=>{ const r=wc.res[st.k]; return r && r!=='pass' && r!=='ok'; });
     sum = bad.length
-      ? `<div class="wcsum bad"><b>Problem found: ${bad.map(b=>`${b.wire} (pin ${b.pin})`).join(', ')}.</b> Fix ${bad.length>1?'those connections':'that connection'}, then press <b>Retry chip ID</b>.</div>`
-      : `<div class="wcsum good"><b>All six connections check out.</b> If the ID still reads FF FF FF: in-circuit, the board may be interfering (hold JL5110 to GND on EDM-010/020, or lift pin 8). Otherwise the chip may be dead: take it off and read it in an SOP8 adapter.</div>`;
+      ? `<div class="wcsum bad"><b>Problem found: ${bad.map(b=>`${b.wire} (${typeof b.pin==='string'?'pins':'pin'} ${b.pin})`).join(', ')}.</b> Fix ${bad.length>1?'those connections':'that connection'}, then press <b>Retry chip ID</b>.</div>`
+      : `<div class="wcsum good"><b>Every connection checks out.</b> If the ID still reads FF FF FF: in-circuit, the board may be interfering (hold JL5110 to GND on EDM-010/020, or lift pin 8). Otherwise the chip may be dead: take it off and read it in an SOP8 adapter.</div>`;
     sum += `<div class="row" style="margin-top:10px"><button class="btn sm" data-wc="restart">Run again</button><span class="spacer"></span><button class="btn sm primary" data-wc="retry">Retry chip ID</button></div>`;
   }
   body.innerHTML=`<div class="wcsteps">${steps}</div>${sum}`;
@@ -2108,7 +2113,7 @@ async function diagnoseId(first){
     // a chip in deep power-down ignores everything except 0xAB; wake it and try again
     await prog.hw.xfer([0xAB,0,0,0,0]); await sleep(2);
     const w=await prog.flash.jedec(); if (chipInfo(w)) return {woke:w};
-    return {title:'MISO is stuck high: the chip never answered', detail:'Every read came back FF FF FF, even after a wake-up command. One of the six connections isn\'t reaching the chip, or the chip has no power. Usual suspects: CS (pin 1), VCC (pin 8), GND (pin 4), MISO (pin 2) or MOSI (pin 5).'};
+    return {title:'MISO is stuck high: the chip never answered', detail:'Every read came back FF FF FF, even after a wake-up command. One of the six connections isn\'t reaching the chip, or the chip has no power. Usual suspects: CS (pin 1), VCC (pin 8), GND (pin 4), MISO (pin 2), MOSI (pin 5), or HOLD (pin 7) held low. With no chip connected, this result is normal.'};
   }
   if (ids.every(v=>v===0)) return {title:'MISO is stuck low', detail:'Every read came back 00 00 00. Usually the chip has no power or GND is missing, or MISO is shorted to ground. In-circuit, the southbridge can also hold the lines: hold JL5110 to GND (EDM-010/020) or lift pin 8.'};
   if (uniq.length>1) return {title:'The answer changes between reads', detail:`Got ${uniq.slice(0,4).map(v=>v.toString(16).toUpperCase().padStart(6,'0').replace(/(..)(?=.)/g,'$1 ')).join(' / ')}. That's a loose or intermittent contact. Reseat the clip, or shorten and re-solder the wires.`};

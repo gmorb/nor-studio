@@ -4,6 +4,7 @@
 
 ### Added
 - **Wiring check** for the CH341A. When the chip ID fails, the app re-reads it, tries waking the chip from power-down, and says what the reading means (stuck high, stuck low, shifted by one bit, or changing between reads). "Find the bad connection" then tests each wire: GND and VCC with a multimeter, CS/CLK/MOSI by switching each pin high and low while you measure the chip's leg, and MISO live while you briefly bridge pin 2 to GND. It ends by naming the broken connection.
+- The wiring check also measures HOLD (pin 7) and WP (pin 3). A low HOLD pin makes the chip ignore everything and read FF FF FF even with perfect wiring; a low WP pin blocks writes.
 - Garbled IDs from an unknown maker are now diagnosed instead of being accepted as a chip.
 - PS5-style light bar along the top edge: blue while reading/writing, a white flash on success, amber on errors.
 - IBM Plex Mono (embedded) for hex, serials, MACs and the terminal, so they look the same on every OS.

@@ -248,6 +248,11 @@ body.lb-ok .lightbar{background:linear-gradient(90deg,transparent,#fff 15%,#fff 
 body.lb-err .lightbar{background:linear-gradient(90deg,transparent,#ffb547 15%,#ff9f43 85%,transparent);box-shadow:0 0 14px 2px rgba(255,159,67,.5);opacity:1}
 @media (prefers-reduced-motion:no-preference){body.lb-busy .lightbar{animation:breathe 1.6s var(--ease-io) infinite alternate}}
 @keyframes breathe{from{opacity:.5}to{opacity:1}}
+.wiretog{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin:2px 0 8px}
+.wiretog .check{font-size:13px}
+.wl-legend{font-size:12px;color:var(--dim)}
+.wl-legend b{color:var(--muted);font-family:var(--mono)}
+body.hide-wire .wirebadges,body.hide-wire .wl-legend{display:none}
 .help h3{font-size:14px;margin:18px 0 6px}
 .help p,.help li{color:#c5cede;font-size:13.5px}
 .help code{font-family:var(--mono);background:rgba(255,255,255,.07);padding:1px 6px;border-radius:6px;font-size:12px}
@@ -583,10 +588,11 @@ h1,h2,h3{text-wrap:balance}
       <div class="card">
         <h2>NOR chip <span class="tag blue">IC5001</span></h2>
         <p class="sub">Winbond <b>W25Q16JVSNIM</b>: 2&nbsp;MB, <b>3.3&nbsp;V</b>, SOIC-8. Top side (Side A), right next to the southbridge (IC5006). The same part is used on EDM-010 and EDM-020.</p>
+<div class="wiretog"><label class="check"><input type="checkbox" class="wireToggle" checked> Show CH341A wire labels</label><span class="wl-legend">CH341A pin → chip pin · <b>3.3V*</b> only with the board unplugged · <b>—</b> leave unconnected · <a href="#" data-goto-wire>full wiring guide</a></span></div>
         <svg viewBox="0 0 560 300" class="diagram" role="img" aria-label="IC5001 pinout">
           <rect x="190" y="40" width="180" height="220" rx="8" class="chip"/>
-          <circle cx="212" cy="62" r="7" class="pin1"/>
-          <text x="280" y="140" class="chiplbl">W25Q16JV</text><text x="280" y="162" class="chipsub">IC5001 · top view</text>
+          <circle cx="205" cy="50" r="5.5" class="pin1"/>
+          <text x="280" y="246" class="chipsub" style="font-weight:600;fill:#dbe4f3">W25Q16JV · IC5001</text>
           <!-- left pins 1-4 -->
           <g class="pins">
             <rect x="170" y="62" width="20" height="14"/><rect x="170" y="112" width="20" height="14"/><rect x="170" y="162" width="20" height="14"/><rect x="170" y="212" width="20" height="14"/>
@@ -606,7 +612,7 @@ h1,h2,h3{text-wrap:balance}
             <text x="400" y="168">CLK</text><text x="400" y="182" class="nsub">from SB</text>
             <text x="400" y="218">DI (MOSI)</text><text x="400" y="232" class="nsub">47 Ω (R5060) from SB</text>
           </g>
-          <text x="280" y="290" class="foot">Clip pin 1 (red wire) goes to the dot on the chip.</text>
+          <g class="wirebadges"><g class="wb"><rect x="198" y="60" width="56" height="18" rx="5" fill="#c9d3e3" fill-opacity="0.18" stroke="#c9d3e3" stroke-opacity="0.9"/><text x="226.0" y="72.7" text-anchor="middle" fill="#c9d3e3" style="font:700 10.5px var(--mono)">CS</text></g><g class="wb"><rect x="198" y="110" width="56" height="18" rx="5" fill="#3ddc97" fill-opacity="0.18" stroke="#3ddc97" stroke-opacity="0.9"/><text x="226.0" y="122.7" text-anchor="middle" fill="#3ddc97" style="font:700 10.5px var(--mono)">MISO</text></g><g class="wb"><rect x="198" y="160" width="56" height="18" rx="5" fill="#5d6779" fill-opacity="0.08" stroke="#5d6779" stroke-opacity="0.4"/><text x="226.0" y="172.7" text-anchor="middle" fill="#5d6779" style="font:700 10.5px var(--mono)">—</text></g><g class="wb"><rect x="198" y="210" width="56" height="18" rx="5" fill="#a3abb8" fill-opacity="0.18" stroke="#a3abb8" stroke-opacity="0.9"/><text x="226.0" y="222.7" text-anchor="middle" fill="#a3abb8" style="font:700 10.5px var(--mono)">GND</text></g><g class="wb"><rect x="306" y="60" width="56" height="18" rx="5" fill="#ffb36b" fill-opacity="0.18" stroke="#ffb36b" stroke-opacity="0.9"/><text x="334.0" y="72.7" text-anchor="middle" fill="#ffb36b" style="font:700 10.5px var(--mono)">3.3V*</text></g><g class="wb"><rect x="306" y="110" width="56" height="18" rx="5" fill="#5d6779" fill-opacity="0.08" stroke="#5d6779" stroke-opacity="0.4"/><text x="334.0" y="122.7" text-anchor="middle" fill="#5d6779" style="font:700 10.5px var(--mono)">—</text></g><g class="wb"><rect x="306" y="160" width="56" height="18" rx="5" fill="#f290d6" fill-opacity="0.18" stroke="#f290d6" stroke-opacity="0.9"/><text x="334.0" y="172.7" text-anchor="middle" fill="#f290d6" style="font:700 10.5px var(--mono)">CLK</text></g><g class="wb"><rect x="306" y="210" width="56" height="18" rx="5" fill="#5aa9ff" fill-opacity="0.18" stroke="#5aa9ff" stroke-opacity="0.9"/><text x="334.0" y="222.7" text-anchor="middle" fill="#5aa9ff" style="font:700 10.5px var(--mono)">MOSI</text></g></g><text x="280" y="290" class="foot">Clip pin 1 (red wire) goes to the dot on the chip.</text>
         </svg>
       </div>
 
@@ -719,7 +725,7 @@ h1,h2,h3{text-wrap:balance}
     <div class="grid g2" style="margin-bottom:18px">
       <div class="card">
         <h2>Wiring a CH341A straight to the chip</h2>
-        <p class="sub">For when you're not using the SOIC-8 clip or the SOP8 socket adapter: wires soldered to the NOR's legs, a chip-off on a breakout, or a clip that won't fit. Applies to every PS5 board covered here, since they all use the same Winbond W25Q16JV.</p>
+        <p class="sub">Tip: the NOR diagrams in each board tab show these CH341A labels right on the chip's pins. For when you're not using the SOIC-8 clip or the SOP8 socket adapter: wires soldered to the NOR's legs, a chip-off on a breakout, or a clip that won't fit. Applies to every PS5 board covered here, since they all use the same Winbond W25Q16JV.</p>
         <svg viewBox="0 0 560 360" class="diagram" role="img" aria-label="CH341A to SPI flash wiring"><rect x="20" y="40" width="150" height="300" rx="8" class="chip"/><text x="95" y="66" class="chiplbl" style="font-size:14px">CH341A</text><text x="95" y="84" class="chipsub">programmer header</text><rect x="380" y="40" width="160" height="300" rx="8" class="chip"/><text x="460" y="66" class="chiplbl" style="font-size:13px">W25Q16JV</text><text x="460" y="84" class="chipsub">flash pin number · name</text><g class="net"><text x="160" y="115" text-anchor="end" class="">CS</text><text x="160" y="155" text-anchor="end" class="">MISO</text><text x="160" y="195" text-anchor="end" class="">MOSI</text><text x="160" y="235" text-anchor="end" class="">CLK</text><text x="160" y="275" text-anchor="end" class="vcc">VCC 3.3 V</text><text x="160" y="315" text-anchor="end" class="gnd">GND</text></g><g class="net"><text x="396" y="115" class="">1 · /CS</text><text x="396" y="145" class="">2 · DO (SO)</text><text x="396" y="175" class="" style="opacity:.45">3 · /WP</text><text x="396" y="205" class="gnd">4 · GND</text><text x="396" y="235" class="">5 · DI (SI)</text><text x="396" y="265" class="">6 · CLK</text><text x="396" y="295" class="" style="opacity:.45">7 · /HOLD</text><text x="396" y="325" class="vcc">8 · VCC</text></g><g fill="none" stroke-width="2.5" stroke-linecap="round"><path d="M170 110 C 270 110, 290 110, 386 110" stroke="#c9d3e3"/><path d="M170 150 C 270 150, 290 140, 386 140" stroke="#3ddc97"/><path d="M170 190 C 270 190, 290 230, 386 230" stroke="#5aa9ff"/><path d="M170 230 C 270 230, 290 260, 386 260" stroke="#f290d6"/><path d="M170 270 C 270 270, 290 320, 386 320" stroke="#ffb36b"/><path d="M170 310 C 270 310, 290 200, 386 200" stroke="#8a93a3"/></g><circle cx="170" cy="110" r="3.5" fill="#c9d3e3"/><circle cx="386" cy="110" r="3.5" fill="#c9d3e3"/><circle cx="170" cy="150" r="3.5" fill="#3ddc97"/><circle cx="386" cy="140" r="3.5" fill="#3ddc97"/><circle cx="170" cy="190" r="3.5" fill="#5aa9ff"/><circle cx="386" cy="230" r="3.5" fill="#5aa9ff"/><circle cx="170" cy="230" r="3.5" fill="#f290d6"/><circle cx="386" cy="260" r="3.5" fill="#f290d6"/><circle cx="170" cy="270" r="3.5" fill="#ffb36b"/><circle cx="386" cy="320" r="3.5" fill="#ffb36b"/><circle cx="170" cy="310" r="3.5" fill="#8a93a3"/><circle cx="386" cy="200" r="3.5" fill="#8a93a3"/><text x="470" y="356" class="foot" style="font-size:10.5px">pins 3 and 7: see note on the right</text></svg>
         <table class="wire">
           <tr><th>CH341A label</th><th>Flash pin</th><th>Why</th></tr>
@@ -793,6 +799,7 @@ h1,h2,h3{text-wrap:balance}
       <div class="card">
         <h2>NOR chip <span class="tag blue">EDM-041</span></h2>
         <p class="sub">Winbond <b>W25Q16JV</b> (marked <code style="font-family:var(--mono)">25Q16JVNIM</code>): 2&nbsp;MB, <b>3.3&nbsp;V</b>, SOIC-8, chip ID <code style="font-family:var(--mono)">EF 40 15</code>. It's the same part as the launch boards. It sits right of the southbridge (<code style="font-family:var(--mono)">SIE CXD90069GG</code>), with a column of 8 small resistors between them.</p>
+<div class="wiretog"><label class="check"><input type="checkbox" class="wireToggle" checked> Show CH341A wire labels</label><span class="wl-legend">CH341A pin → chip pin · <b>3.3V*</b> only with the board unplugged · <b>—</b> leave unconnected · <a href="#" data-goto-wire>full wiring guide</a></span></div>
         <svg viewBox="0 0 560 300" class="diagram" role="img" aria-label="EDM-041 NOR location and pinout">
           <rect x="20" y="30" width="200" height="220" rx="6" class="chip"/>
           <text x="120" y="135" class="chiplbl" style="font-size:14px">Southbridge</text><text x="120" y="156" class="chipsub">SIE CXD90069GG</text>
@@ -816,7 +823,7 @@ h1,h2,h3{text-wrap:balance}
             <text x="338" y="232" text-anchor="middle" style="font-size:11px">CS</text><text x="379" y="232" text-anchor="middle" style="font-size:11px">DO</text><text x="420" y="232" text-anchor="middle" style="font-size:11px">WP</text><text x="461" y="232" text-anchor="middle" class="gnd" style="font-size:11px">GND</text>
             <text x="338" y="40" text-anchor="middle" class="vcc" style="font-size:11px">VCC</text><text x="379" y="40" text-anchor="middle" style="font-size:11px">HOLD</text><text x="420" y="40" text-anchor="middle" style="font-size:11px">CLK</text><text x="461" y="40" text-anchor="middle" style="font-size:11px">DI</text>
           </g>
-          <text x="280" y="285" class="foot">As in the photo: text reads upright, dot (pin 1) at lower left. Clip red wire goes to pin 1.</text>
+          <g class="wirebadges"><g class="wb"><rect x="319" y="240" width="38" height="16" rx="5" fill="#c9d3e3" fill-opacity="0.18" stroke="#c9d3e3" stroke-opacity="0.9"/><text x="338.0" y="251.7" text-anchor="middle" fill="#c9d3e3" style="font:700 9.5px var(--mono)">CS</text></g><g class="wb"><rect x="360" y="240" width="38" height="16" rx="5" fill="#3ddc97" fill-opacity="0.18" stroke="#3ddc97" stroke-opacity="0.9"/><text x="379.0" y="251.7" text-anchor="middle" fill="#3ddc97" style="font:700 9.5px var(--mono)">MISO</text></g><g class="wb"><rect x="401" y="240" width="38" height="16" rx="5" fill="#5d6779" fill-opacity="0.08" stroke="#5d6779" stroke-opacity="0.4"/><text x="420.0" y="251.7" text-anchor="middle" fill="#5d6779" style="font:700 9.5px var(--mono)">—</text></g><g class="wb"><rect x="442" y="240" width="38" height="16" rx="5" fill="#a3abb8" fill-opacity="0.18" stroke="#a3abb8" stroke-opacity="0.9"/><text x="461.0" y="251.7" text-anchor="middle" fill="#a3abb8" style="font:700 9.5px var(--mono)">GND</text></g><g class="wb"><rect x="319" y="6" width="38" height="16" rx="5" fill="#ffb36b" fill-opacity="0.18" stroke="#ffb36b" stroke-opacity="0.9"/><text x="338.0" y="17.7" text-anchor="middle" fill="#ffb36b" style="font:700 9.5px var(--mono)">3.3V*</text></g><g class="wb"><rect x="360" y="6" width="38" height="16" rx="5" fill="#5d6779" fill-opacity="0.08" stroke="#5d6779" stroke-opacity="0.4"/><text x="379.0" y="17.7" text-anchor="middle" fill="#5d6779" style="font:700 9.5px var(--mono)">—</text></g><g class="wb"><rect x="401" y="6" width="38" height="16" rx="5" fill="#f290d6" fill-opacity="0.18" stroke="#f290d6" stroke-opacity="0.9"/><text x="420.0" y="17.7" text-anchor="middle" fill="#f290d6" style="font:700 9.5px var(--mono)">CLK</text></g><g class="wb"><rect x="442" y="6" width="38" height="16" rx="5" fill="#5aa9ff" fill-opacity="0.18" stroke="#5aa9ff" stroke-opacity="0.9"/><text x="461.0" y="17.7" text-anchor="middle" fill="#5aa9ff" style="font:700 9.5px var(--mono)">MOSI</text></g></g><text x="280" y="285" class="foot">As in the photo: text reads upright, dot (pin 1) at lower left. Clip red wire goes to pin 1.</text>
         </svg>
       </div>
       <div class="card">
@@ -1987,6 +1994,10 @@ $('#boardSeg').addEventListener('click',e=>{ const b=e.target.dataset?.b; if(!b)
 { const gb=store.get('guideBoard','b12'); if (gb!=='b12') $(`#boardSeg button[data-b=${gb}]`)?.click(); }
 
 document.addEventListener('click',e=>{ if(e.target.closest('[data-goto-wire]')){ e.preventDefault(); switchView('guide'); $('#boardSeg button[data-b=wire]').click(); } });
+/* CH341A wire labels on the NOR diagrams: one setting for every diagram */
+function applyWireLabels(on){ document.body.classList.toggle('hide-wire',!on); $$('.wireToggle').forEach(c=>c.checked=on); store.set('wireLabels',on); }
+document.addEventListener('change',e=>{ if(e.target.classList?.contains('wireToggle')) applyWireLabels(e.target.checked); });
+applyWireLabels(store.get('wireLabels',true));
 /* ============================================================ shell */
 function switchView(v){ $$('nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===v)); $$('.view').forEach(s=>s.classList.toggle('active',s.id==='view-'+v)); store.set('view',v); }
 $$('nav button').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.view)));

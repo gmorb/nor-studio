@@ -20,6 +20,7 @@
 - On phones, the background glow no longer stretches while scrolling (the backdrop is now a fixed full-height layer instead of a fixed background).
 
 ### Hardware guide
+- NOR chip diagrams (EDM‑010/020 and EDM‑041) show the CH341A pin for every chip pin (CS, MISO, MOSI, CLK, GND, 3.3V), color-coded to match the wiring guide, with a toggle to hide them.
 - New "CH341A wiring" guide: direct wiring from the programmer header to the chip (MISO→DO, MOSI→DI), alias names, chip-ID troubleshooting, and when to leave the 3.3 V wire off (powered-board method).
 - EDM‑041 NOR confirmed: Winbond W25Q16JV (3.3 V, SOIC‑8) next to the southbridge, with location and pinout diagram and board photos.
 - The empty tag next to "Advanced" in the NOR editor no longer shows.

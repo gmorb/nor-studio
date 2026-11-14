@@ -74,6 +74,15 @@ Source: Sony board service manuals for the CFI‑1000/1100 series (schematic she
 
 This is a 3.3 V chip, so no 1.8 V adapter is needed. The CH341A must still have the **3.3 V mod**.
 
+**On the board (EDM-010 photos):** IC5001 is marked `25Q16JVNIM` and sits right of the southbridge, which is marked `SIE CXD90061GG` on this board, with a column of 4 small parts between them. With the chip's text upright, the dot (pin 1) is at the lower left: pins 1–4 along the bottom, 5–8 along the top from right to left. That's the same orientation as EDM-041.
+
+<p>
+  <img src="boards/edm-010-nor-and-southbridge.jpg" alt="EDM-010: southbridge CXD90061GG with the Winbond 25Q16JVNIM NOR (IC5001) to its right" width="49%">
+  <img src="boards/edm-010-nor-closeup.jpg" alt="EDM-010 NOR close-up: Winbond 25Q16JVNIM, pin 1 dot at lower left" width="49%">
+</p>
+
+> **Southbridge versions:** EDM-010 uses `CXD90061GG`, EDM-041 uses `CXD90069GG` (both seen on users' boards). When replacing a southbridge, fit the same part number as the original: the NOR has to match the southbridge that's fitted.
+
 ### UART / service test pads: JL5101–JL5110
 
 Bottom side of the board, just below a metal shield can. A small black ribbon connector sits on the left and a white 3‑pin connector on the right.

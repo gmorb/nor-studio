@@ -637,7 +637,7 @@ h1,h2,h3{text-wrap:balance}
     <div class="grid g2">
       <div class="card">
         <h2>NOR chip <span class="tag blue">IC5001</span></h2>
-        <p class="sub">Winbond <b>W25Q16JVSNIM</b>: 2&nbsp;MB, <b>3.3&nbsp;V</b>, SOIC-8. Top side (Side A), right next to the southbridge (IC5006). The same part is used on EDM-010 and EDM-020.</p>
+        <p class="sub">Winbond <b>W25Q16JVSNIM</b> (marked <code style="font-family:var(--mono)">25Q16JVNIM</code>): 2&nbsp;MB, <b>3.3&nbsp;V</b>, SOIC-8. Top side (Side A), right next to the southbridge (IC5006, marked <code style="font-family:var(--mono)">SIE CXD90061GG</code> on EDM-010). The same chip is used on EDM-010 and EDM-020. The pinout below is drawn schematic-style; the board view is further down.</p>
 <div class="wiretog"><label class="check"><input type="checkbox" class="wireToggle" checked> Show CH341A wire labels</label><span class="wl-legend">CH341A pin → chip pin · <b>3.3V*</b> only with the board unplugged · <b>—</b> leave unconnected · <a href="#" data-goto-wire>full wiring guide</a></span></div>
         <svg viewBox="0 0 560 300" class="diagram" role="img" aria-label="IC5001 pinout">
           <rect x="190" y="40" width="180" height="220" rx="8" class="chip"/>
@@ -694,6 +694,47 @@ h1,h2,h3{text-wrap:balance}
           <tr><td>JL5101</td><td>3.3 V standby, right next to GND: <i>measure only</i></td><td><span style="color:var(--bad)">do not connect</span></td></tr>
         </table>
         <div class="hint">The right-hand column is GND / TX / RX from top to bottom. That matches the reference photo in <a href="https://github.com/amoamare/Console-Service-Tool/blob/master/Resources/UARTLocations/PlayStation5/EDM_010_020_UART.png" target="_blank" rel="noopener">Console Service Tool</a>. The schematic shows no net on JL5109, so confirm it has continuity to ground before you use it. "FC" pads belong to the SSD controller.</div>
+      </div>
+    </div>
+
+    <div class="grid g2" style="margin-top:18px">
+      <div class="card">
+        <h2>NOR on the board <span class="tag blue">EDM-010</span></h2>
+        <p class="sub">How IC5001 actually looks on an EDM-010: right of the southbridge, with a column of 4 small parts between them. With the chip's text upright, the dot (pin&nbsp;1) is at the <b>lower left</b>. Pins 1–4 run along the bottom, 5–8 along the top from right to left.</p>
+<div class="wiretog"><label class="check"><input type="checkbox" class="wireToggle" checked> Show CH341A wire labels</label><span class="wl-legend">CH341A pin → chip pin · <b>3.3V*</b> only with the board unplugged · <b>—</b> leave unconnected · <a href="#" data-goto-wire>full wiring guide</a></span></div>
+        <svg viewBox="0 0 560 300" class="diagram" role="img" aria-label="EDM-010 NOR location as seen on the board">
+          <rect x="20" y="30" width="200" height="220" rx="6" class="chip"/>
+          <text x="120" y="135" class="chiplbl" style="font-size:14px">Southbridge</text><text x="120" y="156" class="chipsub">SIE CXD90061GG · IC5006</text>
+          <g fill="#2a3242" stroke="rgba(255,255,255,.18)">
+            <rect x="250" y="80" width="26" height="12" rx="2"/><rect x="250" y="102" width="26" height="12" rx="2"/>
+            <rect x="250" y="124" width="26" height="12" rx="2"/><rect x="250" y="146" width="26" height="12" rx="2"/>
+          </g>
+          <text x="263" y="178" class="landt" style="font-size:10.5px">4 parts</text>
+          <rect x="318" y="72" width="180" height="120" rx="6" class="chip"/>
+          <text x="408" y="122" class="chiplbl" style="font-size:15px">W25Q16JV</text><text x="408" y="142" class="chipsub">IC5001 · as on the board</text>
+          <circle cx="338" cy="174" r="7" class="pin1"/>
+          <g class="pins">
+            <rect x="330" y="192" width="16" height="20"/><rect x="371" y="192" width="16" height="20"/><rect x="412" y="192" width="16" height="20"/><rect x="453" y="192" width="16" height="20"/>
+            <rect x="330" y="52" width="16" height="20"/><rect x="371" y="52" width="16" height="20"/><rect x="412" y="52" width="16" height="20"/><rect x="453" y="52" width="16" height="20"/>
+          </g>
+          <g class="pinno"><text x="338" y="206">1</text><text x="379" y="206">2</text><text x="420" y="206">3</text><text x="461" y="206">4</text>
+            <text x="338" y="66">8</text><text x="379" y="66">7</text><text x="420" y="66">6</text><text x="461" y="66">5</text></g>
+          <g class="net" style="font-size:11px">
+            <text x="338" y="232" text-anchor="middle" style="font-size:11px">CS</text><text x="379" y="232" text-anchor="middle" style="font-size:11px">DO</text><text x="420" y="232" text-anchor="middle" style="font-size:11px">WP</text><text x="461" y="232" text-anchor="middle" class="gnd" style="font-size:11px">GND</text>
+            <text x="338" y="40" text-anchor="middle" class="vcc" style="font-size:11px">VCC</text><text x="379" y="40" text-anchor="middle" style="font-size:11px">HOLD</text><text x="420" y="40" text-anchor="middle" style="font-size:11px">CLK</text><text x="461" y="40" text-anchor="middle" style="font-size:11px">DI</text>
+          </g>
+          <g class="wirebadges"><g class="wb"><rect x="319" y="240" width="38" height="16" rx="5" fill="#c9d3e3" fill-opacity="0.18" stroke="#c9d3e3" stroke-opacity="0.9"/><text x="338.0" y="251.7" text-anchor="middle" fill="#c9d3e3" style="font:700 9.5px var(--mono)">CS</text></g><g class="wb"><rect x="360" y="240" width="38" height="16" rx="5" fill="#3ddc97" fill-opacity="0.18" stroke="#3ddc97" stroke-opacity="0.9"/><text x="379.0" y="251.7" text-anchor="middle" fill="#3ddc97" style="font:700 9.5px var(--mono)">MISO</text></g><g class="wb"><rect x="401" y="240" width="38" height="16" rx="5" fill="#5d6779" fill-opacity="0.08" stroke="#5d6779" stroke-opacity="0.4"/><text x="420.0" y="251.7" text-anchor="middle" fill="#5d6779" style="font:700 9.5px var(--mono)">—</text></g><g class="wb"><rect x="442" y="240" width="38" height="16" rx="5" fill="#a3abb8" fill-opacity="0.18" stroke="#a3abb8" stroke-opacity="0.9"/><text x="461.0" y="251.7" text-anchor="middle" fill="#a3abb8" style="font:700 9.5px var(--mono)">GND</text></g><g class="wb"><rect x="319" y="6" width="38" height="16" rx="5" fill="#ffb36b" fill-opacity="0.18" stroke="#ffb36b" stroke-opacity="0.9"/><text x="338.0" y="17.7" text-anchor="middle" fill="#ffb36b" style="font:700 9.5px var(--mono)">3.3V*</text></g><g class="wb"><rect x="360" y="6" width="38" height="16" rx="5" fill="#5d6779" fill-opacity="0.08" stroke="#5d6779" stroke-opacity="0.4"/><text x="379.0" y="17.7" text-anchor="middle" fill="#5d6779" style="font:700 9.5px var(--mono)">—</text></g><g class="wb"><rect x="401" y="6" width="38" height="16" rx="5" fill="#f290d6" fill-opacity="0.18" stroke="#f290d6" stroke-opacity="0.9"/><text x="420.0" y="17.7" text-anchor="middle" fill="#f290d6" style="font:700 9.5px var(--mono)">CLK</text></g><g class="wb"><rect x="442" y="6" width="38" height="16" rx="5" fill="#5aa9ff" fill-opacity="0.18" stroke="#5aa9ff" stroke-opacity="0.9"/><text x="461.0" y="17.7" text-anchor="middle" fill="#5aa9ff" style="font:700 9.5px var(--mono)">MOSI</text></g></g><text x="280" y="285" class="foot">As in the photo: text reads upright, dot (pin 1) at lower left. Clip red wire goes to pin 1.</text>
+        </svg>
+      </div>
+      <div class="card">
+        <h2>Southbridge versions</h2>
+        <p class="sub">Different boards use different southbridges, and the NOR has to match the one fitted.</p>
+        <table class="wire">
+          <tr><th>Board</th><th>Southbridge marking</th></tr>
+          <tr><td>EDM-010</td><td><code>SIE CXD90061GG</code> (seen on a user's board)</td></tr>
+          <tr><td>EDM-041</td><td><code>SIE CXD90069GG</code> (seen on a user's board)</td></tr>
+        </table>
+        <div class="hint">Replacing a southbridge? Fit the same part number as the original. A repairer on an EDM-031 found the board stayed dead with the other version until the NOR came from a board with the matching southbridge.</div>
       </div>
     </div>
 

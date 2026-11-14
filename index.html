@@ -217,6 +217,21 @@ mark{background:rgba(47,143,255,.35);color:#fff;border-radius:3px;padding:0 2px}
 .rlist .rv{font-family:var(--mono);font-size:12px;color:#c5cede;overflow-wrap:anywhere}
 .rlist .rv s{color:var(--dim)}
 .rlist .same{opacity:.55}
+.diag{display:grid;gap:6px;margin-top:10px;padding:12px 14px;border-radius:12px;background:rgba(255,92,122,.07);border:1px solid rgba(255,92,122,.3);color:#ffd0d9;font-size:13px}
+.diag b{color:#fff;font-size:13.5px}.diag .btn{justify-self:start;margin-top:4px}
+.wcsteps{display:grid;gap:8px}
+.wcstep{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:rgba(0,0,0,.2)}
+.wcstep.cur{border-color:rgba(47,143,255,.45);background:rgba(47,143,255,.06)}
+.wcstep .wh{display:flex;align-items:center;gap:10px;font-weight:600;font-size:13.5px}
+.wcstep .wh .tag{margin-left:auto}
+.wcstep .wb{margin-top:8px;font-size:13px;color:#c5cede;line-height:1.55}
+.wcstep .wb .row{margin-top:10px}
+.wcstep .lvl{font:600 12.5px var(--mono);padding:3px 10px;border-radius:999px;background:var(--panel2)}
+.wcstep .lvl.hi{background:rgba(47,143,255,.18);color:#8fc0ff}.wcstep .lvl.lo{background:rgba(255,255,255,.08);color:#c5cede}
+.wcstep .fix{margin-top:8px;font-size:12.5px;color:#ffd0d9}
+.wcsum{margin-top:12px;padding:12px 14px;border-radius:12px;font-size:13px;line-height:1.55}
+.wcsum.bad{background:rgba(255,92,122,.08);border:1px solid rgba(255,92,122,.3);color:#ffd0d9}
+.wcsum.good{background:rgba(61,220,151,.08);border:1px solid rgba(61,220,151,.3);color:#c9f5df}
 .proghead{min-height:34px;margin-bottom:14px}
 .prog{height:8px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden}
 .prog .bar{height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--blue2));border-radius:99px;transition:width .2s linear;box-shadow:0 0 14px var(--glow)}
@@ -452,6 +467,12 @@ h1,h2,h3{text-wrap:balance}
           <div class="kv" id="chipTable"></div>
           <div class="hint" id="chipVolt"></div>
         </div>
+      </div>
+
+      <div class="card hidden" id="wcCard">
+        <div class="row"><h2>Wiring check</h2><span class="spacer"></span><button class="btn sm ghost" id="wcClose">Close</button></div>
+        <p class="sub">Tests the six CH341A connections one at a time. You'll need a multimeter. Keep the console unplugged. Measure on the chip's own legs, not on the clip.</p>
+        <div id="wcBody"></div>
       </div>
 
       <div class="card">
@@ -1803,12 +1824,20 @@ class CH341A {
     if (r.status!=='ok') throw new Error('USB write failed ('+r.status+')');
   }
   cs(low){ return this.out([CH.UIO, CH.UIO_OUT|(low?0x36:0x37), CH.UIO_END]); }
+  /* diagnostics: hold the SPI pins at fixed levels (CH341A: CS=D0, CLK=D3, MOSI=D5; MISO=D7 is the input) */
+  setPins({cs=1,clk=0,mosi=1}={}){ const v=0x16|(cs?0x01:0)|(clk?0x08:0)|(mosi?0x20:0); return this.out([CH.UIO, CH.UIO_OUT|v, CH.UIO_DIR|0x3F, CH.UIO_END]); }
+  idle(){ return this.setPins({cs:1,clk:0,mosi:1}); }
+  /* clock bytes with CS left HIGH (chip deselected, its DO pin is high-impedance) and return what MISO reads */
+  async sampleMiso(n=4){ await this.idle(); return this.stream(new Uint8Array(n)); }
   /* one SPI transaction: CS low, clock tx out, collect the same number of bytes in, CS high */
   async xfer(tx){
+    await this.cs(true);
+    try { return await this.stream(tx); } finally { await this.cs(false); }
+  }
+  async stream(tx){
     tx = tx instanceof Uint8Array ? tx : new Uint8Array(tx);
     const rx = new Uint8Array(tx.length), C = CH.PKT-1, BATCH = 32;
-    await this.cs(true);
-    try {
+    {
       for (let off=0; off<tx.length; off+=BATCH*C){
         const end=Math.min(tx.length, off+BATCH*C), n=Math.ceil((end-off)/C), want=end-off;
         const buf=new Uint8Array(want+n); let w=0;
@@ -1822,7 +1851,7 @@ class CH341A {
         (await withTimeout(Promise.all(ins), 3000)).forEach(take);
         while (got<want) take(await withTimeout(this.dev.transferIn(this.epIn, CH.PKT), 3000));
       }
-    } finally { await this.cs(false); }
+    }
     return rx;
   }
 }
@@ -1886,15 +1915,22 @@ class FakeFlash {
   }
 }
 class FakeCH341Device {
-  constructor(flash){ this.flash=flash; this.productName='CH341A (demo)'; this.low=false; this.q=[]; this.w=[];
+  constructor(flash){ this.flash=flash; this.productName='CH341A (demo)'; this.low=false; this.q=[]; this.w=[]; this.pins=0x37; this.misoBridged=false; this.fault=null;
     this.configuration={interfaces:[{alternate:{endpoints:[{type:'bulk',direction:'out',endpointNumber:2},{type:'bulk',direction:'in',endpointNumber:2}]}}]}; }
   async open(){} async selectConfiguration(){} async claimInterface(){} async close(){}
   async transferOut(ep, data){
     for (let p=0; p<data.length; p+=CH.PKT){
       const pk=data.subarray(p, p+CH.PKT);
       if (pk[0]===CH.UIO){ for (const s of pk.subarray(1)){ if (s===CH.UIO_END) break;
-          if ((s&0xC0)===CH.UIO_OUT){ const low=!(s&1); if(low&&!this.low) this.flash.csLow(); if(!low&&this.low) this.flash.csHigh(); this.low=low; } } }
-      else if (pk[0]===CH.SPI){ const r=new Uint8Array(pk.length-1); for (let i=1;i<pk.length;i++) r[i-1]=REV[this.flash.byte(REV[pk[i]])]; this.q.push(r); }
+          if ((s&0xC0)===CH.UIO_OUT){ this.pins=s&0x3F; const low=!(s&1); if(low&&!this.low) this.flash.csLow(); if(!low&&this.low) this.flash.csHigh(); this.low=low; } } }
+      else if (pk[0]===CH.SPI){ const r=new Uint8Array(pk.length-1);
+        for (let i=1;i<pk.length;i++){
+          let v;
+          if (this.misoBridged) v=0x00;
+          else if (!this.low || this.fault) v=(this.fault==='stuck-low')?0x00:0xFF;   // deselected or broken wire: MISO idles high
+          else v=this.flash.byte(REV[pk[i]]);
+          r[i-1]=REV[v]; }
+        this.q.push(r); }
     }
     this.pump(); return {status:'ok', bytesWritten:data.length};
   }
@@ -1915,6 +1951,94 @@ function makeDemoDump(){
   return b;
 }
 
+/* -------- wiring check: one connection at a time -------- */
+const WC_STEPS=[
+  {k:'gnd',  wire:'GND',  pin:4, kind:'manual',
+   how:'Set the multimeter to continuity (beep). Put one probe on the CH341A\'s <b>GND</b> pin and the other on chip <b>pin 4</b>.',
+   pass:'It beeps', fail:'No beep', fix:'GND isn\'t reaching pin 4. Reseat the clip, or re-solder the GND wire to pin 4.'},
+  {k:'vcc',  wire:'VCC 3.3 V', pin:8, kind:'volts',
+   how:'Set the multimeter to DC volts. Black probe on chip <b>pin 4</b> (GND), red probe on chip <b>pin 8</b> (VCC).',
+   opts:[['ok','About 3.3 V'],['sag','Between 1 and 3 V'],['zero','About 0 V']],
+   fixes:{sag:'The board is pulling the 3.3 V rail down. In-circuit, that rail also feeds the southbridge. Hold JL5110 to GND (EDM-010/020), lift pin 8 off the board, or take the chip off.',
+          zero:'No 3.3 V at pin 8. Check the VCC wire to pin 8, and that your CH341A is set to 3.3 V. Never connect VCC while the console is plugged in.'}},
+  {k:'cs',   wire:'CS',   pin:1, kind:'drive', bit:'cs',  decisive:'LOW',  note:'The board has a pull-up on this pin, so <b>LOW</b> is the reading that proves the wire.'},
+  {k:'clk',  wire:'CLK',  pin:6, kind:'drive', bit:'clk', decisive:'HIGH', note:'Nothing else drives this pin, so <b>HIGH</b> is the reading that proves the wire.'},
+  {k:'mosi', wire:'MOSI', pin:5, kind:'drive', bit:'mosi',decisive:'LOW',  note:'Check both readings. MOSI goes to the chip\'s <b>DI</b> (pin 5), not DO.'},
+  {k:'miso', wire:'MISO', pin:2, kind:'miso'},
+];
+const wc={open:false, i:0, res:{}, lvl:1, token:0, sawHi:false, sawLo:false};
+function wcOpen(){
+  if (!prog.hw) return;
+  Object.assign(wc,{open:true,i:0,res:{},lvl:1}); prog.diag=true;
+  $('#wcCard').classList.remove('hidden'); setFlashUi(); wcRender();
+  $('#wcCard').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth', block:'start'});
+}
+async function wcClose(){
+  wc.open=false; wc.token++; prog.diag=false; $('#wcCard').classList.add('hidden');
+  try { await prog.hw?.idle(); } catch {}
+  setFlashUi();
+}
+async function wcApplyDrive(){
+  const st=WC_STEPS[wc.i]; if (!st||st.kind!=='drive'||!prog.hw) return;
+  const pins={cs:1,clk:0,mosi:1}; pins[st.bit]=wc.lvl;
+  try { await prog.hw.setPins(pins); } catch(e){ flog('ng','Pin control failed: '+e.message); }
+}
+async function wcMisoLoop(){
+  const t=++wc.token; wc.sawHi=false; wc.sawLo=false;
+  while (wc.open && wc.token===t && WC_STEPS[wc.i]?.kind==='miso'){
+    let v; try { v=await prog.hw.sampleMiso(4); } catch(e){ flog('ng','MISO read failed: '+e.message); break; }
+    const all1=v.every(x=>x===0xFF), all0=v.every(x=>x===0x00);
+    if (all1) wc.sawHi=true; if (all0 && wc.sawHi) wc.sawLo=true;
+    const el=$('#wcMiso'); if (el){ el.className='lvl '+(all1?'hi':all0?'lo':''); el.textContent= all1?'HIGH':all0?'LOW':'changing'; }
+    if (wc.sawLo && all1 && !wc.res.miso){ wc.res.miso='pass'; flog('ok','MISO responded to the bridge: wire OK.'); wcNext(); return; }
+    await sleep(200);
+  }
+}
+function wcSet(k,v){ wc.res[k]=v; wcNext(); }
+function wcNext(){ wc.i++; wc.lvl=1; wcRender(); }
+function wcRender(){
+  const body=$('#wcBody'); if (!body) return;
+  const steps=WC_STEPS.map((st,idx)=>{
+    const r=wc.res[st.k], cur=idx===wc.i;
+    const tag = r==='pass'||r==='ok' ? '<span class="tag ok">OK</span>' : r ? '<span class="tag bad">Problem</span>' : cur ? '<span class="tag blue">Now</span>' : '<span class="tag gray">Waiting</span>';
+    let inner='';
+    if (cur){
+      if (st.kind==='manual') inner=`<div class="wb">${st.how}<div class="row"><button class="btn sm" data-wc="pass">${st.pass}</button><button class="btn sm danger" data-wc="fail">${st.fail}</button></div></div>`;
+      if (st.kind==='volts') inner=`<div class="wb">${st.how}<div class="row">${st.opts.map(([v,l])=>`<button class="btn sm ${v==='ok'?'':'danger'}" data-wc="${v}">${l}</button>`).join('')}</div></div>`;
+      if (st.kind==='drive') inner=`<div class="wb">The app is now holding <b>${st.wire}</b> <span class="lvl ${wc.lvl?'hi':'lo'}">${wc.lvl?'HIGH':'LOW'}</span>. Measure chip <b>pin ${st.pin}</b> to pin 4: it should read <b>${wc.lvl?'about 3.3 V':'about 0 V'}</b>. Switch levels and check that the pin follows. ${st.note}
+        <div class="row"><button class="btn sm" data-wc="toggle">Switch to ${wc.lvl?'LOW':'HIGH'}</button><span class="spacer"></span><button class="btn sm" data-wc="pass">Pin follows</button><button class="btn sm danger" data-wc="fail">Pin doesn't change</button></div></div>`;
+      if (st.kind==='miso') inner=`<div class="wb">The programmer is reading <b>MISO</b> live: <span class="lvl" id="wcMiso">…</span><br>With tweezers or a jumper wire, <b>briefly bridge chip pin 2 to pin 4</b> (GND). The reading should drop to LOW while bridged and return to HIGH when you let go. This step passes on its own when that happens. The chip is deselected during this test, so the bridge is safe.
+        <div class="row"><span class="spacer"></span><button class="btn sm danger" data-wc="fail">It never changes</button></div></div>`;
+    } else if (r && r!=='pass' && r!=='ok'){
+      const fix = st.kind==='volts' ? st.fixes[r] : st.kind==='drive' ? `${st.wire} isn't reaching pin ${st.pin}. Reseat the clip, or re-solder the ${st.wire} wire to pin ${st.pin}.` : st.kind==='miso' ? 'MISO isn\'t reaching pin 2. MISO goes to the chip\'s DO (pin 2), not DI (pin 5). If the reading stayed LOW the whole time, something is holding pin 2 low. In-circuit, that can be the southbridge: hold JL5110 to GND.' : st.fix;
+      inner=`<div class="fix">${fix}</div>`;
+    }
+    return `<div class="wcstep ${cur?'cur':''}"><div class="wh"><span>${idx+1}. ${st.wire} → chip pin ${st.pin}</span>${tag}</div>${inner}</div>`;
+  }).join('');
+  let sum='';
+  if (wc.i>=WC_STEPS.length){
+    const bad=WC_STEPS.filter(st=>{ const r=wc.res[st.k]; return r && r!=='pass' && r!=='ok'; });
+    sum = bad.length
+      ? `<div class="wcsum bad"><b>Problem found: ${bad.map(b=>`${b.wire} (pin ${b.pin})`).join(', ')}.</b> Fix ${bad.length>1?'those connections':'that connection'}, then press <b>Retry chip ID</b>.</div>`
+      : `<div class="wcsum good"><b>All six connections check out.</b> If the ID still reads FF FF FF: in-circuit, the board may be interfering (hold JL5110 to GND on EDM-010/020, or lift pin 8). Otherwise the chip may be dead: take it off and read it in an SOP8 adapter.</div>`;
+    sum += `<div class="row" style="margin-top:10px"><button class="btn sm" data-wc="restart">Run again</button><span class="spacer"></span><button class="btn sm primary" data-wc="retry">Retry chip ID</button></div>`;
+  }
+  body.innerHTML=`<div class="wcsteps">${steps}</div>${sum}`;
+  const st=WC_STEPS[wc.i];
+  if (st?.kind==='drive') wcApplyDrive(); else if (prog.hw) prog.hw.idle().catch(()=>{});
+  if (st?.kind==='miso') wcMisoLoop();
+}
+document.addEventListener('click',async e=>{
+  if (e.target.id==='btnWireCheck'){ e.preventDefault(); return wcOpen(); }
+  if (e.target.id==='wcClose') return wcClose();
+  const a=e.target.closest('[data-wc]')?.dataset.wc; if (!a||!wc.open) return;
+  const st=WC_STEPS[wc.i];
+  if (a==='toggle'){ wc.lvl=wc.lvl?0:1; wcRender(); return; }
+  if (a==='restart'){ Object.assign(wc,{i:0,res:{},lvl:1}); wcRender(); return; }
+  if (a==='retry'){ await wcClose(); return runOp(detectChip); }
+  if (st) wcSet(st.k, a);
+});
+
 /* -------- programmer controller -------- */
 const prog = { hw:null, flash:null, chip:null, size:NOR.SIZE, busy:false, cancel:false, lastRead:null, backupSaved:false, demo:false };
 
@@ -1932,7 +2056,7 @@ function setFlashUi(){
   const on=!!prog.flash;
   $('#btnFlashConnect').classList.toggle('hidden',on); $('#btnFlashDemo').classList.toggle('hidden',on); $('#btnFlashDisconnect').classList.toggle('hidden',!on);
   $('#btnFlashDisconnect').disabled=prog.busy;
-  $('#btnChipRead').disabled=!on||prog.busy; $('#btnSaveBackup').disabled=!prog.lastRead||prog.busy;
+  $('#btnChipRead').disabled=!on||prog.busy||prog.diag; $('#btnSaveBackup').disabled=!prog.lastRead||prog.busy;
   $('#btnFlashCancel').classList.toggle('hidden',!prog.busy);
   renderWriteGates();
 }
@@ -1950,7 +2074,7 @@ function renderWriteGates(){
   } else g.push(['fail','No image loaded']);
   g.push(prog.lastRead ? ['pass','Chip has been read this session', 'Write asks: read first (backup + only changed sectors) or write without reading'] : ['warnl','Chip not read yet','Write asks: read first (recommended, saves a backup) or write without reading']);
   $('#writeGates').innerHTML = g.map(([k,t,s])=>`<li class="${k}"><span class="ic">${k==='pass'?'✓':k==='fail'?'✕':'!'}</span><div>${esc(t)}${s?`<small>${esc(s)}</small>`:''}</div></li>`).join('');
-  $('#btnChipWrite').disabled = prog.busy || g.some(x=>x[0]==='fail');
+  $('#btnChipWrite').disabled = prog.busy || prog.diag || g.some(x=>x[0]==='fail');
 }
 
 async function flashConnect(demo=false){
@@ -1976,20 +2100,45 @@ async function flashConnect(demo=false){
     prog.hw=null; prog.flash=null;
   } finally { setFlashUi(); updatePills(); }
 }
+const KNOWN_IDS=[0xEF4015,0xEF4016,0xEF4017,0xEF7015,0xEF6015,0xC22015,0xC22535,0xC84015,0xC86015];
+async function diagnoseId(first){
+  const reads=[first]; for (let i=0;i<4;i++) reads.push(await prog.flash.jedec());
+  const ids=reads.map(r=>(r[0]<<16)|(r[1]<<8)|r[2]), uniq=[...new Set(ids)];
+  if (ids.every(v=>v===0xFFFFFF)){
+    // a chip in deep power-down ignores everything except 0xAB; wake it and try again
+    await prog.hw.xfer([0xAB,0,0,0,0]); await sleep(2);
+    const w=await prog.flash.jedec(); if (chipInfo(w)) return {woke:w};
+    return {title:'MISO is stuck high: the chip never answered', detail:'Every read came back FF FF FF, even after a wake-up command. One of the six connections isn\'t reaching the chip, or the chip has no power. Usual suspects: CS (pin 1), VCC (pin 8), GND (pin 4), MISO (pin 2) or MOSI (pin 5).'};
+  }
+  if (ids.every(v=>v===0)) return {title:'MISO is stuck low', detail:'Every read came back 00 00 00. Usually the chip has no power or GND is missing, or MISO is shorted to ground. In-circuit, the southbridge can also hold the lines: hold JL5110 to GND (EDM-010/020) or lift pin 8.'};
+  if (uniq.length>1) return {title:'The answer changes between reads', detail:`Got ${uniq.slice(0,4).map(v=>v.toString(16).toUpperCase().padStart(6,'0').replace(/(..)(?=.)/g,'$1 ')).join(' / ')}. That's a loose or intermittent contact. Reseat the clip, or shorten and re-solder the wires.`};
+  const v=ids[0], shifted=KNOWN_IDS.find(k=>((k<<1)&0xFFFFFF)===v||(k>>1)===v||((k<<1)&0xFFFFFF|1)===v||((k>>1)|0x800000)===v);
+  if (shifted) return {title:'The ID is shifted by one bit', detail:`Read ${hex(reads[0],' ')}, which is ${shifted.toString(16).toUpperCase().replace(/(..)(?=.)/g,'$1 ')} off by one bit. The chip is answering, but the clock and data are out of step: long or loose wires, especially CLK (pin 6). Shorten the wires and keep GND next to CLK.`};
+  return {title:'The chip answered with an unknown ID', detail:`Read ${hex(reads[0],' ')} consistently. Check that it's a 25-series SPI flash, then check MOSI (pin 5) and CLK (pin 6). Garbled commands give garbled answers.`};
+}
 async function detectChip(){
-  const id=await prog.flash.jedec(), c=chipInfo(id);
+  let id=await prog.flash.jedec(), c=chipInfo(id);
+  if (c && !MFR[id[0]]){ // unknown maker: often a garbled ID from a bad wire, so check before trusting it
+    const d=await diagnoseId(id); if (!/unknown ID/.test(d.title||'')) c=null, prog._diag=d; }
+  if (!c){ const d=prog._diag||await diagnoseId(id); prog._diag=null;
+    if (d.woke){ flog('ok','The chip was in power-down mode; woke it up.'); id=d.woke; c=chipInfo(id); }
+    else {
+      prog.chip=null;
+      flog('ng',`No chip answered (ID ${hex(id,' ')}). ${d.title}.`);
+      $('#chipBox').classList.remove('hidden');
+      $('#chipTable').innerHTML=`<div class="k">JEDEC ID</div><div class="v">${hex(id,' ')}</div><div class="c"><button class="btn sm" id="btnRedetect">Retry</button></div>`;
+      $('#chipVolt').innerHTML=`<div class="diag"><b>${esc(d.title)}</b><span>${esc(d.detail)}</span><button class="btn sm primary" id="btnWireCheck">Find the bad connection</button></div>`;
+      $('#chipVolt').classList.remove('err'); setFlashUi(); updatePills(); return; } }
   prog.chip=c;
-  if (!c){ flog('ng',`No chip answered (ID ${hex(id,' ')}). Check the clip orientation and contact, and that the board is unpowered.`);
-    $('#chipBox').classList.remove('hidden'); $('#chipTable').innerHTML=`<div class="k">JEDEC ID</div><div class="v">${hex(id,' ')}</div><div class="c"><button class="btn sm" id="btnRedetect">Retry</button></div>`;
-    $('#chipVolt').textContent='No chip detected.'; $('#chipVolt').classList.add('err'); return; }
   prog.size=c.size||NOR.SIZE;
   const st=await prog.flash.status();
   $('#chipBox').classList.remove('hidden');
   $('#chipTable').innerHTML=[['Chip',`${c.mfr} ${c.family}`],['JEDEC ID',c.id],['Size',c.size?`${c.size/1048576} MB`:'Unknown — assuming 2 MB'],['Voltage',c.volt?`${c.volt} V part`:'Unknown — check the marking'],['Status register',`${hx(st,2)}${st&0x3C?' · write-protected':''}`]]
     .map(([k,v],i)=>`<div class="k">${k}</div><div class="v">${esc(v)}</div><div class="c">${i===0?'<button class="btn sm ghost" id="btnRedetect">Re-detect</button>':''}</div>`).join('');
-  const vh=$('#chipVolt'); vh.classList.toggle('err', c.volt===1.8);
+  const vh=$('#chipVolt'); vh.innerHTML=''; vh.classList.toggle('err', c.volt===1.8);
   vh.textContent = c.volt===1.8 ? '⚠ 1.8 V chip — only continue if the CH341A is on a 1.8 V adapter. 3.3 V/5 V can damage it.' : c.volt===3.3 ? '3.3 V chip — a standard CH341A at 3.3 V is fine (verify yours isn\'t a 5 V board).' : '';
   if (c.size && c.size!==NOR.SIZE) flog('sys',`Note: chip is ${c.size/1048576} MB; PS5 NOR dumps are 2 MB.`);
+  vh.insertAdjacentHTML('beforeend', ` <a href="#" id="btnWireCheck" style="margin-left:6px">Check wiring</a>`);
   flog('ok',`Detected ${c.mfr} ${c.family} · ID ${c.id}${c.size?` · ${c.size/1048576} MB`:''}`);
 }
 async function readAll(stage){
@@ -2098,7 +2247,7 @@ async function writeChip(){
 
 $('#btnFlashConnect').addEventListener('click',()=>flashConnect(false));
 $('#btnFlashDemo').addEventListener('click',()=>flashConnect(true));
-$('#btnFlashDisconnect').addEventListener('click',async()=>{ await prog.hw?.close(); prog.hw=prog.flash=prog.chip=null; prog.lastRead=null; $('#chipBox').classList.add('hidden'); flog('sys','Disconnected'); setFlashUi(); updatePills(); });
+$('#btnFlashDisconnect').addEventListener('click',async()=>{ if (wc.open) await wcClose(); await prog.hw?.close(); prog.hw=prog.flash=prog.chip=null; prog.lastRead=null; $('#chipBox').classList.add('hidden'); flog('sys','Disconnected'); setFlashUi(); updatePills(); });
 $('#btnChipRead').addEventListener('click',readChip);
 $('#btnChipWrite').addEventListener('click',writeChip);
 $('#btnSaveBackup').addEventListener('click',()=>saveBackup());

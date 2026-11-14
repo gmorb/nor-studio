@@ -24,7 +24,7 @@
 | | |
 |---|---|
 | 🧩 **NOR Editor** | Reads serial, motherboard serial, SKU, region, board, Wi‑Fi (all 3 copies) and LAN MAC, firmware, active slot, OS flags, MD5 and SHA‑256. Switches Disc ↔ Digital and edits serial and SKU. Advanced edits cover motherboard serial, WiFi MAC and OS flags (IDU, manufacturing mode, boot messages, memory tests). **Restore identity from original dump** copies a console's own IDs onto a donor NOR in one step, including the LAN MAC check bytes. Every change gets a byte‑level diff before saving. Health check includes SLB2 firmware containers and flag‑copy consistency. |
-| 🔌 **CH341A Programmer** | Reads the NOR straight into the editor (reads twice and compares), lets you read first before every write (saves a backup and rewrites only the 4 KB sectors that changed) or write without reading after a clear warning, then verifies the whole chip. Detects the chip and warns about 1.8 V parts. |
+| 🔌 **CH341A Programmer** | Reads the NOR straight into the editor (reads twice and compares), lets you read first before every write (saves a backup and rewrites only the 4 KB sectors that changed) or write without reading after a clear warning, then verifies the whole chip. Detects the chip and warns about 1.8 V parts. If the chip doesn't answer, it diagnoses the ID (stuck high, stuck low, shifted, intermittent) and a **wiring check** walks through all six connections to name the one that's broken. |
 | 📟 **UART Diagnostics** | Detects the console automatically and wakes it with a serial break. Reads the whole error log and decodes each entry: description, power state, OS state, boot cause, active devices, SoC and ambient temperatures, and time between entries. Also has a terminal with auto‑checksum, a command‑list runner, log clearing and report export. |
 | 📚 **Error Code Database** | 430+ exact codes plus 30+ code families (pattern matching). Downloads over HTTPS and is cached offline. Imports the old `errorDB.xml`, Console Service Tool JSON or CSV. Adds your own repair notes per code. |
 | 🗺️ **Hardware Guide** | EDM‑010/020 NOR pinout (IC5001, W25Q16JV) and UART pad map (JL5101–JL5110) in real board orientation, EDM‑03x and EDM‑04x+ (Slim) UART pads, in‑circuit vs chip‑off guidance, and tips for Slim boards. |
@@ -44,6 +44,9 @@
   </tr>
   <tr>
     <td colspan="2"><img src="docs/screenshots/hardware-guide.png" alt="Hardware guide"><p align="center"><b>Hardware Guide</b>: NOR pinout and UART pad map for EDM‑010/020</p></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><img src="docs/screenshots/wiring-check.png" alt="Wiring check" width="70%"><p align="center"><b>Wiring check</b>: finds which CH341A connection is broken when the chip reads FF FF FF</p></td>
   </tr>
 </table>
 

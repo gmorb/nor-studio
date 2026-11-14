@@ -47,6 +47,8 @@ For soldered wires, a chip-off on a breakout, or when the clip won't fit. Every 
 
 **Check with the app:** `EF 40 15` = correct. `FF FF FF` = check MISO→2 and CS→1. `00 00 00` = no power or GND, or MOSI/MISO swapped. Changing or odd IDs = loose wire or clock; shorten wires and re-solder CLK→6.
 
+**Not sure which wire?** When the ID fails, press **Find the bad connection** in the Programmer tab. With a multimeter, it checks GND and VCC, then switches CS, CLK and MOSI high and low for you to measure on the chip's legs, and shows MISO live while you briefly bridge pin 2 to pin 4. It finishes by naming the connection that failed.
+
 ## EDM‑010 / EDM‑020 (CFI‑10xx / 11xx)
 
 Source: Sony board service manuals for the CFI‑1000/1100 series (schematic sheets "SFlash 2MB" and "MISC", printed wiring boards side A and side B).

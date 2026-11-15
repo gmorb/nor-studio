@@ -78,6 +78,8 @@
 
 📘 **New to NOR Studio?** Read the [user manual (PDF)](docs/NOR-Studio-Manual.pdf): safety, setup, every tab, step-by-step jobs, the 3 beeps troubleshooter and a troubleshooting table.
 
+Also in [Português (Brasil)](docs/NOR-Studio-Manual.pt-BR.pdf) · [Español (Latinoamérica)](docs/NOR-Studio-Manual.es-419.pdf) · [Español (España)](docs/NOR-Studio-Manual.es.pdf) · [简体中文](docs/NOR-Studio-Manual.zh-CN.pdf) · [繁體中文](docs/NOR-Studio-Manual.zh-TW.pdf).
+
 See also the in‑app **Help** and **Hardware Guide** tabs, or [`docs/HARDWARE_GUIDE.md`](docs/HARDWARE_GUIDE.md).
 
 ## 🔧 Typical workflows

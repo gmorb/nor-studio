@@ -29,6 +29,7 @@
 | 📟 **UART Diagnostics** | Detects the console automatically and wakes it with a serial break. Reads the whole error log and decodes each entry: description, power state, OS state, boot cause, active devices, SoC and ambient temperatures, and time between entries. Also has a terminal with auto‑checksum, a command‑list runner, log clearing and report export. |
 | 📚 **Error Code Database** | 430+ exact codes plus 30+ code families (pattern matching). Downloads over HTTPS and is cached offline. Imports the old `errorDB.xml`, Console Service Tool JSON or CSV. Adds your own repair notes per code. |
 | 🔔 **3 beeps troubleshooter** | Step-by-step checks for a console that beeps three times when plugged in, taken from a real EDM-041 repair, plus a checklist for vetting donor dumps (with a check of the donor's own error log) and restoring your own identity. NOR Studio doesn't host dumps. |
+| 🌐 **Languages** | English, Português (Brasil), Español (Latinoamérica), Español (España), 简体中文 (Simplified Chinese) and 繁體中文 (Traditional Chinese, Taiwan). NOR Studio follows your browser's language (any Spanish locale except Spain gets Latin American Spanish), and the picker next to the tabs switches it any time. Error code descriptions from the database stay in English. |
 | 🗺️ **Hardware Guide** | EDM‑010/020 NOR pinout (IC5001, W25Q16JV) and UART pad map (JL5101–JL5110) in real board orientation, EDM‑03x and EDM‑04x+ (Slim) UART pads, in‑circuit vs chip‑off guidance, and tips for Slim boards. |
 | 💡 **PS5 light bar** | A thin glow along the top edge shows what the tool is doing: blue while working, a white flash on success, amber on errors. |
 | 🛡️ **Safety first** | Voltage checks before connecting, 3.3 V‑mod warnings for the CH341A, write gates, serial/MAC mismatch warnings. Your original file is never modified. |
@@ -46,6 +47,9 @@
   </tr>
   <tr>
     <td colspan="2"><img src="docs/screenshots/hardware-guide.png" alt="Hardware guide"><p align="center"><b>Hardware Guide</b>: NOR pinout and UART pad map for EDM‑010/020</p></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><img src="docs/screenshots/mobile.png" alt="NOR Studio on a phone" width="80%"><p align="center"><b>On a phone</b>: bottom tab bar, stacked layouts, nothing cut off</p></td>
   </tr>
   <tr>
     <td colspan="2" align="center"><img src="docs/screenshots/three-beeps.png" alt="3 beeps troubleshooter" width="85%"><p align="center"><b>3 beeps troubleshooter</b>: what to check, in order, when a console beeps three times on plug-in</p></td>
@@ -117,6 +121,10 @@ See also the in‑app **Help** and **Hardware Guide** tabs, or [`docs/HARDWARE_G
 This software is provided **as‑is, without warranty of any kind**. Modifying or flashing a NOR can permanently damage a console. **Use it at your own risk.** Always keep a backup of your original dump.
 
 NOR Studio is an unofficial tool and is **not affiliated with or endorsed by Sony Interactive Entertainment**. PlayStation and PS5 are trademarks of Sony Interactive Entertainment. No Sony firmware, keys, dumps or service documentation are included in this repository.
+
+## 🌐 Translations
+
+Translations are in [`i18n/`](i18n): one JSON file per language, mapping each English string to its translation. Keys with `{name}` slots are patterns for text that contains numbers or file names; keep the slots and any HTML tags in your translation. After editing, run `python tools/build_i18n.py` to build them into `index.html`. Chinese is `i18n/zh.json` (Simplified) and `i18n/zh-TW.json` (Traditional, with Taiwan's repair terms). Latin American Spanish is `i18n/es-419.json` and Spain's is `i18n/es.json`; they share most text but differ in repair vocabulary (for example *tarjeta madre* vs *placa base*, *reporte* vs *informe*, *presiona* vs *pulsa*). To add a language, copy `i18n/es.json` to `i18n/<code>.json`, translate the values, and add the code to the language picker (see the notes at the top of `tools/build_i18n.py`). Corrections from native speakers are very welcome.
 
 ## 🙏 Credits
 

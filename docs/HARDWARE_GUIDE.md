@@ -191,3 +191,18 @@ NOR Studio doesn't host dumps: every dump contains Sony's firmware and another c
 - Read its error log in the health check. APU, power or thermal faults mean that console was faulty. The data can still be fine, but a clean log is safer.
 - Keep an untouched copy, so you can tell a bad board from a bad rebuild.
 - Put your own identity back with **Restore identity** before you use the console. A donor written as-is shares its serial and MACs with another console, and anything tied to that serial (a PSN ban, for example) applies to both.
+
+
+## HDMI chip swap (Realtek → Panasonic)
+
+Slim boards ship with one of two HDMI chips, and the NOR says which one to expect: 0x1C4062 = `01` Realtek RTD2175P, `FF` Panasonic MN864739. Converter boards such as [BGA Tech's Realtek → Panasonic mod](https://github.com/BgaTech-Brazil/Realtek-Panasonic) replace a dead Realtek chip with a Panasonic one, so the NOR must be switched too.
+
+BGA Tech's method uses a base file: a known-good Panasonic NOR for the board family, with the console's serial and motherboard serial copied in. NOR Studio's Restore identity does the same and also copies the MAC addresses, model and Kiban ID, so converted consoles don't share the base file's MACs.
+
+1. Read and save the console's original NOR.
+2. Get the Panasonic base file for your board family from the converter's maker.
+3. Open the base file in the NOR Editor. Console information should show **HDMI chip: Panasonic MN864739**, and the health check should pass.
+4. **Restore identity** from the original dump, everything ticked. The "Different HDMI chip" note is expected: the base file's Panasonic setting stays.
+5. Save, write and verify. Fit the converter, connect UART, clear the log (it came with the base file), and test.
+
+The firmware version comes from the base file and may be older than the console's system software: update once it boots.

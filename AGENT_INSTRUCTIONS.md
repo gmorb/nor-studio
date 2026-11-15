@@ -21,6 +21,7 @@ You are setting up a public GitHub repository for **NOR Studio**, a single-file 
    index.html  README.md  LICENSE  NOTICE.md  CHANGELOG.md  .gitignore
    docs/banner.svg  docs/HARDWARE_GUIDE.md  docs/screenshots/*.png  docs/social-preview.png
    docs/boards/*.jpg  docs/NOR-Studio-Manual.pdf  docs/manual-src/**
+   i18n/pt.json  i18n/es.json  i18n/es-419.json  i18n/zh.json  i18n/zh-TW.json  tools/build_i18n.py
    .github/workflows/pages.yml  .github/ISSUE_TEMPLATE/*.md
    ```
    `AGENT_INSTRUCTIONS.md` (this file) may be left out of the repo.
@@ -86,4 +87,5 @@ Send the owner: the repo URL, the Pages URL and the release URL.
 
 - License: the project contains code and logic derived from PS5 NOR Modifier (GPL-2.0), so it must stay **GPL-2.0**. Keep `LICENSE` and the credits intact.
 - To update the app later, replace `index.html`, add a line to `CHANGELOG.md`, commit and push. Pages redeploys automatically.
+- Translations live in `i18n/<lang>.json` and are built into `index.html`. After editing one, run `python tools/build_i18n.py` from the repo root and commit both the JSON and `index.html`. Never edit the `<script id="i18n-data">` block in `index.html` by hand.
 - To update the manual: edit `docs/manual-src/manual.html` (screenshots are in `docs/manual-src/jpg/`), then run `pip install playwright pypdf && playwright install chromium` once and `python docs/manual-src/build_manual.py`. It rewrites `docs/NOR-Studio-Manual.pdf`. Install the Inter font first for the same look. Commit both the source and the PDF. The manual's screenshots use demo data only: never put a real console's serial or MACs in it.

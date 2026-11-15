@@ -138,8 +138,8 @@ td.m{font-family:var(--mono); font-size:8.8pt; font-weight:500}
 
 <section class="ch" id="s4">
   <h2><span class="n">4</span>Finding your way around</h2>
-  <p class="lede">Six tabs across the top, with status pills on the right that show what's loaded and connected.</p>
-  <figure class="mid"><img src="jpg/nor-editor.jpg"><figcaption>The NOR Editor tab with a demo dump loaded. The pills at the top right show the loaded dump, the programmer, UART and the error database.</figcaption></figure>
+  <p class="lede">Six tabs across the top (a bottom bar on phones), with status pills that show what's loaded and connected.</p>
+  <figure class="mid"><img src="jpg/nor-editor.jpg" style="width:56%"><figcaption>The NOR Editor tab with a demo dump loaded. The pills at the top right show the loaded dump, the programmer, UART and the error database.</figcaption></figure>
   <table>
     <tr><th>Tab</th><th>Use it to</th></tr>
     <tr><td>1 · NOR Editor</td><td>Open, inspect, check and edit a dump. Save a patched copy.</td></tr>
@@ -151,6 +151,8 @@ td.m{font-family:var(--mono); font-size:8.8pt; font-weight:500}
   </table>
   <h4>Shortcuts</h4>
   <p><kbd>1</kbd>–<kbd>6</kbd> switch tabs · <kbd>Ctrl</kbd>+<kbd>O</kbd> open a dump · <kbd>Ctrl</kbd>+<kbd>S</kbd> save the patched dump · <kbd>/</kbd> search error codes</p>
+  <h4>Language</h4>
+  <p>NOR Studio comes in English, Português (Brasil), Español (Latinoamérica), Español (España), Simplified Chinese and Traditional Chinese. It follows your browser's language; the language picker next to the tabs next to the tabs switches it at any time. Error code descriptions from the database stay in English.</p>
   <h4>The light bar</h4>
   <p>A thin glow along the top edge shows what the app is doing, like the PS5's own light: blue while reading or writing, a white flash when something finishes, amber when something goes wrong.</p>
   <h4>Demo mode</h4>
@@ -272,7 +274,7 @@ td.m{font-family:var(--mono); font-size:8.8pt; font-weight:500}
 <section class="ch" id="s8">
   <h2><span class="n">8</span>UART diagnostics</h2>
   <p class="lede">The console's service port gives you its error log. UART can't read or write the NOR; it only talks to the console.</p>
-  <figure class="mid"><img src="jpg/uart-tab.jpg"><figcaption>Error codes read from the demo console, with decoded details and the terminal.</figcaption></figure>
+  <figure class="mid"><img src="jpg/uart-tab.jpg" style="width:50%"><figcaption>Error codes read from the demo console, with decoded details and the terminal.</figcaption></figure>
   <h3>Connecting</h3>
   <ol class="steps">
     <li>Wire adapter TX → PS5 RX, adapter RX → PS5 TX, and GND. Adapter at 3.3&nbsp;V, VCC not connected. Pad locations are in the Hardware Guide tab.</li>
@@ -287,8 +289,7 @@ td.m{font-family:var(--mono); font-size:8.8pt; font-weight:500}
   </ul>
   <div class="note warn"><b>Codes tagged "In loaded dump" aren't this console's</b>The error log is stored on the NOR. After writing a donor dump, its previous owner's history comes along. When the same dump is open in the NOR Editor, the app tags those entries and says so. Clear the log to see only your console's own codes.</div>
   <h3>Terminal</h3>
-  <p>Type a command and press <b>Send</b>. The checksum the console needs is added automatically (for example <code>errlog 0</code> becomes <code>errlog 0:BA</code>). Use the arrow keys for history. <b>Run list…</b> sends a list of commands one after another. <b>Save log</b> keeps a copy of the session.</p>
-  <p>Unplugging the console doesn't disconnect UART: the terminal notes the interruption and keeps listening, so the banner appears again when you plug back in.</p>
+  <p>Type a command and press <b>Send</b>. The checksum the console needs is added automatically (for example <code>errlog 0</code> becomes <code>errlog 0:BA</code>). Use the arrow keys for history. <b>Run list…</b> sends a list of commands one after another. <b>Save log</b> keeps a copy of the session. Unplugging the console doesn't disconnect UART.</p>
 </section>
 
 <section class="ch" id="s9">
@@ -312,6 +313,7 @@ td.m{font-family:var(--mono); font-size:8.8pt; font-weight:500}
     <tr><td>EDM-04x+ (Slim)</td><td>UART pad map, and photos of the NOR (W25Q16JV, next to the southbridge, pin 1 dot lower left) from an EDM-041.</td></tr>
     <tr><td>CH341A wiring</td><td>Wiring the programmer straight to the chip, with labels on the chip diagram. You can turn the labels off.</td></tr>
     <tr><td>3 beeps</td><td>The troubleshooter in section 12, plus donor dump advice.</td></tr>
+    <tr><td>HDMI chip swap</td><td>Converting a Slim's NOR from Realtek to Panasonic for HDMI converter boards such as BGA Tech's: the maker's base file plus Restore identity.</td></tr>
   </table>
   <h3>CH341A to the chip</h3>
   <div class="cols keep">
@@ -360,6 +362,14 @@ td.m{font-family:var(--mono); font-size:8.8pt; font-weight:500}
     <li>Plug in with UART connected. Clear the log, unplug for 10 seconds, plug in again and read the codes.</li>
   </ol>
 
+  <h3>Convert the NOR for an HDMI chip swap (Realtek → Panasonic)</h3>
+  <ol class="steps">
+    <li>Read and save the console's original NOR.</li>
+    <li>Open the converter maker's Panasonic base file for your board family. Console information should show <b>HDMI chip: Panasonic MN864739</b>.</li>
+    <li><b>Restore identity</b> from the original dump, everything ticked. The "Different HDMI chip" note is expected.</li>
+    <li>Save, write and verify. Fit the converter, clear the UART log and test. Update the system software once it boots.</li>
+  </ol>
+
   <h3>Diagnose a console with UART</h3>
   <ol class="steps">
     <li>Connect UART with the console in standby. Read the codes and export a report.</li>
@@ -382,7 +392,7 @@ td.m{font-family:var(--mono); font-size:8.8pt; font-weight:500}
     <li><b>Read the chip back while it's on the board</b> and use Compare against the file you wrote. A perfect match rules out the soldering and the write.</li>
     <li><b>Beeps only when you press power?</b> That's a different fault. Check the power/eject button board's flex cable first.</li>
   </ol>
-  <div class="note"><b>A real case: EDM-041 Slim</b>The NOR chip died. A new chip with the console's own backup still beeped, and so did a donor dump with the console's identity copied in. Writing the donor unmodified booted, which proved the board was fine. Every UART code had come with the donor dump. The console's own backup had <code>00</code> at 0x1C4000 instead of <code>30</code>, corrupted by the dying chip, which broke the identity block checksum. Donor dump + own identity + <code>30</code> booted on the console's own serial and MACs.</div>
+  <div class="note"><b>A real case: EDM-041 Slim</b>After a dead NOR, both the console's own backup and a rebuilt donor beeped. The donor unmodified booted, so the board was fine. The backup had <code>00</code> at 0x1C4000 instead of <code>30</code>, which broke the identity checksum. Donor + own identity + <code>30</code> booted on the console's own serial and MACs.</div>
 
   <h3>Finding and vetting a donor dump</h3>
   <p>NOR Studio doesn't host dumps: each one contains Sony's firmware and another console's serial, MACs and keys. Repair forums share them in their firmware threads, for example BadCaps and TronicsFix. Before using one:</p>

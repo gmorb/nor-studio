@@ -125,6 +125,7 @@ NOR Studio is an unofficial tool and is **not affiliated with or endorsed by Son
 - Improvements, extra features and ideas by **The Goat Tech**.
 - NOR layout cross‑checked against [ps5‑wee‑tools](https://github.com/andy-man/ps5-wee-tools) by andy‑man.
 - [Console Service Tool](https://github.com/amoamare/Console-Service-Tool) by amoamare: the error code data (loaded at runtime), the documented error‑log field meanings, OS flag layout and UART reference photos, which are linked rather than copied.
+- [ps5-hdmi-tool](https://github.com/MeoWDev-MOD/ps5-hdmi-tool) by MeoWDev-MOD: documented the identity block checksum and the HDMI chip selector, which NOR Studio implements independently.
 
 ## ☕ Support the project
 

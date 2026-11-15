@@ -163,7 +163,7 @@ td.m{font-family:var(--mono); font-size:8.8pt; font-weight:500}
 
   <h3>Opening a dump</h3>
   <p>Drag a <code>.bin</code> onto the page, press <kbd>Ctrl</kbd>+<kbd>O</kbd>, or click the drop area. A dump read with the Programmer tab opens here automatically. PS5 dumps are always 2&nbsp;MB.</p>
-  <p><b>Console information</b> shows what the dump says about its console: serial number, motherboard serial, model/SKU, region, board revision, WiFi and LAN MAC, Kiban ID, firmware versions, active slot and OS flags. Each row has a Copy button.</p>
+  <p><b>Console information</b> shows what the dump says about its console: serial number, motherboard serial, model/SKU, region, board revision, the HDMI chip it expects, WiFi and LAN MAC, Kiban ID, firmware versions, active slot and OS flags. Each row has a Copy button.</p>
 
   <h3>Health check</h3>
   <div class="cols">
@@ -174,7 +174,7 @@ td.m{font-family:var(--mono); font-size:8.8pt; font-weight:500}
         <tr><td>Size, header, MBR</td><td>Not a PS5 NOR, or the read failed.</td></tr>
         <tr><td>Blank dump</td><td>Every byte is the same: the programmer read nothing.</td></tr>
         <tr><td>EAP key magics</td><td>The NVS area may be corrupted.</td></tr>
-        <tr><td>Identity header 0x30</td><td>A backup read from a failing chip. A NOR carrying this beeps 3 times.</td></tr>
+        <tr><td>Identity block checksum</td><td>The words from 0x1C4000 to 0x1C41FF must add up to zero. If not, the console beeps 3 times. A single corrupted byte gets a one-click fix.</td></tr>
         <tr><td>Error log</td><td>Shows the log stored in the dump. A donor with APU, power or thermal faults came from a sick console.</td></tr>
         <tr><td>Firmware containers</td><td>Damaged firmware blocks.</td></tr>
         <tr><td>MAC block, OS flags</td><td>Copies that should match don't.</td></tr>
@@ -193,7 +193,7 @@ td.m{font-family:var(--mono); font-size:8.8pt; font-weight:500}
 
   <h3>Restore identity from original dump</h3>
   <p>Use this when you're putting a donor NOR into your console. Open the donor dump, press <b>Choose original dump…</b> and pick your console's own backup. Tick what to copy (serial, motherboard serial, SKU, the board ID and LAN MAC block with its check bytes, Kiban ID, WiFi MAC block) and press Apply.</p>
-  <div class="note"><b>Why not edit the fields one by one?</b>The LAN MAC is followed by two check bytes. Changing the MAC without them makes the console beep 3 times. Restore identity copies the whole block exactly. If your backup has a corrupted identity header byte, it keeps the donor's good <code>0x30</code> and tells you.</div>
+  <div class="note"><b>Why not edit the fields one by one?</b>The LAN MAC sits in a checksummed block. Changing it by hand breaks the checksum, and the console beeps 3 times. Restore identity copies the whole block exactly. If your backup has a corrupted header byte, it keeps the donor's good <code>0x30</code>. It also warns you when the donor is set for a different HDMI chip than your console.</div>
 
   <h3>Changes to be written, and saving</h3>
   <div class="cols">
@@ -377,18 +377,19 @@ td.m{font-family:var(--mono); font-size:8.8pt; font-weight:500}
     <li><b>Connect UART and plug in.</b> If the banner appears, the southbridge is running and reading the NOR, so the NOR's contents are the problem. No banner at all points to a missing or dead NOR, or the southbridge.</li>
     <li><b>Read the codes, then clear the log.</b> Unplug for 10 seconds and plug back in without pressing power. A full log can cause the beeps on its own.</li>
     <li><b>Written a donor dump? Those codes aren't yours.</b> They came with the dump. They're tagged "In loaded dump" when the same dump is open in the NOR Editor.</li>
-    <li><b>Check the dump in the NOR Editor.</b> Look for "Identity block starts with … instead of 0x30".</li>
-    <li><b>Rebuild with Restore identity,</b> not by editing fields one at a time, so the LAN MAC check bytes come along.</li>
+    <li><b>Check the dump in the NOR Editor.</b> If the identity block checksum fails, the console beeps 3 times. A single corrupted byte gets a one-click fix.</li>
+    <li><b>Rebuild with Restore identity,</b> not by editing fields one at a time, and use a donor set for the same HDMI chip as your board.</li>
     <li><b>Read the chip back while it's on the board</b> and use Compare against the file you wrote. A perfect match rules out the soldering and the write.</li>
     <li><b>Beeps only when you press power?</b> That's a different fault. Check the power/eject button board's flex cable first.</li>
   </ol>
-  <div class="note"><b>A real case: EDM-041 Slim</b>The NOR chip died. A new chip with the console's own backup still beeped, and so did a donor dump with the console's identity copied in. Writing the donor unmodified booted, which proved the board was fine. Every UART code had come with the donor dump. The console's own backup had <code>00</code> at 0x1C4000 instead of <code>30</code>, corrupted by the dying chip. Donor dump + own identity + <code>30</code> booted on the console's own serial and MACs.</div>
+  <div class="note"><b>A real case: EDM-041 Slim</b>The NOR chip died. A new chip with the console's own backup still beeped, and so did a donor dump with the console's identity copied in. Writing the donor unmodified booted, which proved the board was fine. Every UART code had come with the donor dump. The console's own backup had <code>00</code> at 0x1C4000 instead of <code>30</code>, corrupted by the dying chip, which broke the identity block checksum. Donor dump + own identity + <code>30</code> booted on the console's own serial and MACs.</div>
 
   <h3>Finding and vetting a donor dump</h3>
   <p>NOR Studio doesn't host dumps: each one contains Sony's firmware and another console's serial, MACs and keys. Repair forums share them in their firmware threads, for example BadCaps and TronicsFix. Before using one:</p>
   <ul>
     <li><b>Same board family:</b> Slim for Slim (EDM-04x), launch for launch (EDM-010/020), EDM-03x for EDM-03x.</li>
-    <li><b>Clean health check:</b> no failed checks, identity header 0x30.</li>
+    <li><b>Clean health check:</b> no failed checks, including the identity block checksum.</li>
+    <li><b>Same HDMI chip:</b> Realtek RTD2175P or Panasonic MN864739, as shown in Console information. It must match your board.</li>
     <li><b>Look at its error log:</b> APU, power or thermal faults mean that console was faulty. The data can still be fine, but a clean log is safer.</li>
     <li><b>Keep an untouched copy,</b> so a failed rebuild can be told apart from a bad board.</li>
   </ul>
@@ -414,7 +415,7 @@ td.m{font-family:var(--mono); font-size:8.8pt; font-weight:500}
 
   <h2 style="margin-top:30px" id="s14"><span class="n">14</span>Credits and license</h2>
   <p>Part of NOR Studio's code and logic comes from <b>PS5 NOR Modifier by TheCod3r</b> (GPL-2.0): the NOR offsets, edition flags, UART command format and checksum. It was rebuilt and extended with the help of AI assistance. Improvements, extra features and ideas by <b>The Goat Tech</b>.</p>
-  <p>NOR offsets cross-checked against <b>ps5-wee-tools</b> by andy-man. Error code data (loaded at runtime), error-log field meanings, OS flag layout and UART reference photos: <b>Console Service Tool</b> by amoamare. Hardware details for EDM-010/020 come from Sony's board service manuals. IBM Plex Mono is used under the SIL Open Font License.</p>
+  <p>NOR offsets cross-checked against <b>ps5-wee-tools</b> by andy-man. Error code data (loaded at runtime), error-log field meanings, OS flag layout and UART reference photos: <b>Console Service Tool</b> by amoamare. Identity block checksum and HDMI chip selector: documented in <b>ps5-hdmi-tool</b> by MeoWDev-MOD. Hardware details for EDM-010/020 come from Sony's board service manuals. IBM Plex Mono is used under the SIL Open Font License.</p>
   <p>NOR Studio is licensed under the GNU General Public License v2.0. It's provided as-is, without warranty of any kind. Modifying or flashing a NOR can permanently damage a console, and you use it at your own risk. Unofficial tool, not affiliated with or endorsed by Sony Interactive Entertainment. PlayStation and PS5 are trademarks of Sony Interactive Entertainment.</p>
 </section>
 </body></html>

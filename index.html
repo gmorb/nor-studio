@@ -958,8 +958,8 @@ h1,h2,h3{text-wrap:balance}
           <li><b>Connect UART and plug in.</b> If <code>$$ [MANU] UART CMD READY</code> appears, the southbridge is running and reading the NOR, so the problem is the NOR's contents. No banner at all points to a missing or dead NOR, or the southbridge.</li>
           <li><b>Read the codes, then clear the log.</b> Press <b>Clear log</b>, unplug for 10 seconds and plug back in without pressing power. A full log can cause the beeps on its own.</li>
           <li><b>Written a donor dump? Those codes aren't yours.</b> The error log lives on the NOR, so the donor's history comes with it. The UART tab tags those entries <span class="tag gray">In loaded dump</span> when the same dump is open in the NOR Editor.</li>
-          <li><b>Check the dump in the NOR Editor.</b> Look for "Identity block starts with … instead of 0x30". A backup read from a failing chip can have a bad byte there, and a NOR carrying it beeps 3 times. Restore identity keeps 0x30 for you.</li>
-          <li><b>Rebuild with Restore identity,</b> not by editing fields one at a time. The LAN MAC has two check bytes after it, and changing the MAC without them also gives 3 beeps.</li>
+          <li><b>Check the dump in the NOR Editor.</b> The health check verifies the identity block checksum (0x1C4000–0x1C41FF). If it fails, the console beeps 3 times. When a single corrupted byte is to blame, as on a backup read from a failing chip, one click fixes it.</li>
+          <li><b>Rebuild with Restore identity,</b> not by editing fields one at a time. The LAN MAC sits inside the checksummed block, and changing it by hand breaks the checksum. Also make sure the donor is set for the same <b>HDMI chip</b> as your board; NOR Studio warns you if it isn't.</li>
           <li><b>Read the chip back while it's on the board</b> and use <b>Compare</b> against the file you wrote. A perfect match rules out the soldering and the write.</li>
           <li><b>Beeps only when you press power?</b> That's a different fault. Check the power/eject button board's flex cable first.</li>
         </ol>
@@ -970,7 +970,7 @@ h1,h2,h3{text-wrap:balance}
         <ul class="checks" style="margin-top:10px">
           <li class="fail"><span class="ic">✕</span><div>3 beeps on plug-in, UART banner present, no new codes<small>The NOR chip had died. A new chip with the console's own backup still beeped, and so did a donor dump with the console's identity copied in.</small></div></li>
           <li class="warnl"><span class="ic">!</span><div>The donor dump unmodified booted<small>That proved the board was fine. The codes on UART had all come with the donor dump, not from this console.</small></div></li>
-          <li class="pass"><span class="ic">✓</span><div>One corrupted byte in the backup<small>The console's own backup had 0x00 at 0x1C4000 instead of 0x30, read from the dying chip. Donor dump + own identity + 0x30 booted on the console's own serial and MACs.</small></div></li>
+          <li class="pass"><span class="ic">✓</span><div>One corrupted byte in the backup<small>The console's own backup had 0x00 at 0x1C4000 instead of 0x30, read from the dying chip. That broke the identity block checksum. Donor dump + own identity + 0x30 booted on the console's own serial and MACs.</small></div></li>
         </ul>
       </div>
     </div>
@@ -980,7 +980,8 @@ h1,h2,h3{text-wrap:balance}
         <p class="sub">NOR Studio doesn't host dumps. Every dump contains Sony's firmware and another console's serial, MACs and keys. Repair forums share them in their firmware threads, for example BadCaps and TronicsFix.</p>
         <ul class="checks" style="margin-top:10px">
           <li class="pass"><span class="ic">✓</span><div>Same board family<small>Slim for Slim (EDM-04x), launch for launch (EDM-010/020), EDM-03x for EDM-03x. Same edition is easiest.</small></div></li>
-          <li class="pass"><span class="ic">✓</span><div>Clean health check<small>Open it in the NOR Editor. No failed checks, and the identity header reads 0x30.</small></div></li>
+          <li class="pass"><span class="ic">✓</span><div>Clean health check<small>Open it in the NOR Editor. No failed checks, including the identity block checksum.</small></div></li>
+          <li class="pass"><span class="ic">✓</span><div>Same HDMI chip as your board<small>Console information shows which HDMI chip a dump is set for: Realtek RTD2175P or Panasonic MN864739. It must match the chip on your board. Restore identity warns you if it doesn't.</small></div></li>
           <li class="pass"><span class="ic">✓</span><div>Look at its error log<small>The health check reads the donor's error log. APU, power or thermal faults mean that console was sick. The data may still be fine, but a clean log is a safer bet.</small></div></li>
           <li class="pass"><span class="ic">✓</span><div>Keep an untouched copy<small>If a rebuild beeps, writing the donor as-is tells you whether the board or the rebuild is the problem.</small></div></li>
         </ul>
@@ -1025,7 +1026,7 @@ h1,h2,h3{text-wrap:balance}
     <p><code>1</code>–<code>6</code> switch tabs · <code>Ctrl+O</code> open dump · <code>Ctrl+S</code> save patched dump · <code>/</code> search error codes</p>
     <h3>Credits &amp; disclaimer</h3>
     <p>Part of this tool's code and logic comes from <b>PS5 NOR Modifier by TheCod3r</b> (GPL-2.0): the NOR offsets, edition flags, UART command format and checksum. It was rebuilt and extended <b>with the help of AI assistance</b>. Improvements, extra features and ideas by <b>The Goat Tech</b>.</p>
-    <p>NOR offsets cross-checked against ps5-wee-tools by andy-man (GPL-3.0). Default error code source, error-log field meanings, OS flag layout and UART reference photos: Console Service Tool by amoamare. Hardware guide details for EDM-010/020 come from Sony's board service manuals.</p>
+    <p>NOR offsets cross-checked against ps5-wee-tools by andy-man (GPL-3.0). Default error code source, error-log field meanings, OS flag layout and UART reference photos: Console Service Tool by amoamare. Identity block checksum and HDMI chip selector offsets: documented in ps5-hdmi-tool by MeoWDev-MOD. Hardware guide details for EDM-010/020 come from Sony's board service manuals.</p>
     <p>This software is provided as-is, without warranty of any kind. Modifying or flashing a NOR can permanently damage a console. You use it at your own risk. Unofficial tool, not affiliated with or endorsed by Sony Interactive Entertainment. PlayStation and PS5 are trademarks of Sony Interactive Entertainment.</p>
   </div>
 </section>
@@ -1174,8 +1175,17 @@ const NOR = {
       wifiCopies: this.WIFI_COPIES.map(o=>hex(u8.subarray(o,o+6),':')),
       wifiSeq: (()=>{ const v=this.WIFI_COPIES.map(o=>this.macInt(u8,o)); return v[1]===v[0]+1 && v[2]===v[0]+2; })(),
       flags: Object.fromEntries(this.OS_FLAGS.map(f=>[f.k, this.OS_BASES.map(b=>u8[b+f.off])])),
+      hdmiByte:u8[this.HDMI_AT], hdmi:this.hdmiChip(u8[this.HDMI_AT]), idSum:this.idSum(u8),
     };
   },
+  /* identity block checksum (documented by MeoWDev-MOD's ps5-hdmi-tool): the 16-bit little-endian words of
+     0x1C4000–0x1C41FF, including the checksum word at 0x1C41FE, add up to 0 (mod 65536). A NOR that fails it gives 3 beeps. */
+  ID_SUM:[0x1C4000,0x1C4200], ID_SUM_AT:0x1C41FE,
+  idSum(u8){ let s=0; for (let o=this.ID_SUM[0]; o<this.ID_SUM[1]; o+=2) s=(s+u8[o]+(u8[o+1]<<8))&0xFFFF; return s; },
+  fixIdSum(u8){ const at=this.ID_SUM_AT, cur=u8[at]|(u8[at+1]<<8), rest=(this.idSum(u8)-cur)&0xFFFF, v=(0x10000-rest)&0xFFFF; u8[at]=v&255; u8[at+1]=v>>8; return v; },
+  /* HDMI chip the console expects (same source): 0x1C4062 = 01 Realtek RTD2175P, FF Panasonic/Nuvoton MN864739 */
+  HDMI_AT:0x1C4062,
+  hdmiChip(v){ return v===0x01?'Realtek RTD2175P':v===0xFF?'Panasonic MN864739':`Unknown (${hx(v,2)})`; },
   /* error log stored in NVS: 32-byte records from 0x1C5100 (mirror at 0x1CE100), same fields the UART errlog command returns */
   errlog(u8){
     const out=[], h=(o,n)=>{ let v=0; for(let i=n-1;i>=0;i--) v=v*256+u8[o+i]; return v.toString(16).toUpperCase().padStart(n*2,'0'); };
@@ -1196,8 +1206,11 @@ const NOR = {
     out.push(mbr===2?['pass','Both MBR copies present']:[mbr?'warnl':'fail', `${mbr}/2 MBR copies present`]);
     const eap=[0x1C75FC,0x1C81FC,0x1CB1FC].filter(o=>u8[o]===0xE5&&u8[o+1]===0xE5&&u8[o+2]===0xE5&&u8[o+3]===0x01).length;
     out.push(eap===3?['pass','EAP key magics intact']:['warnl',`${eap}/3 EAP key magics found`,'Could indicate a corrupted NVS area']);
-    out.push(u8[0x1C4000]===0x30 ? ['pass','Identity block header reads 0x30']
-      : ['warnl',`Identity block starts with ${hx(u8[0x1C4000],2)} instead of 0x30`,'Byte 0x1C4000 is 0x30 in every known-good dump. Any other value usually means the chip was failing when this was read, and the console gives 3 beeps as soon as it\'s plugged in. Restore identity keeps 0x30 when copying from a dump like this.']);
+    { const sum=this.idSum(u8), hdr=u8[0x1C4000];
+      if (sum===0) out.push(hdr===0x30 ? ['pass','Identity block checksum is correct']
+        : ['warnl',`Identity block starts with ${hx(hdr,2)} instead of 0x30`,'The checksum still adds up, so this may be deliberate. Every known-good dump has 0x30 here.']);
+      else if (hdr!==0x30 && ((sum+0x30-hdr)&0xFFFF)===0) out.push(['fail',`Identity block checksum fails: byte 0x1C4000 is ${hx(hdr,2)}, should be 0x30`,'Exactly this one byte is wrong, which usually means the chip was failing when this was read. A NOR like this gives 3 beeps as soon as the console is plugged in. Setting the byte back to 0x30 makes the checksum correct again.',{id:'fixhdr',label:'Set 0x1C4000 to 0x30'}]);
+      else out.push(['fail',`Identity block checksum is wrong (0x1C4000–0x1C41FF)`,`The words in this block should add up to 0000; they add up to ${sum.toString(16).toUpperCase().padStart(4,'0')}. A NOR like this gives 3 beeps as soon as the console is plugged in. Either data in the block is corrupted, so restore it from a good backup, or it was edited without updating the checksum at 0x1C41FE.`,{id:'fixsum',label:'Recalculate checksum'}]); }
     { const log=this.errlog(u8), SERIOUS=/APU|Power Seq|Short|Thermal|Overheat|GDDR|DDR|Not Responding|Power Failure|Storage|SSD|Fuse/i;
       const bad=new Map(); for (const e of log){ const d=(typeof lookup==='function'?lookup(e.code).desc:'')||''; if ((SERIOUS.test(d)&&!/^Known Unknown/i.test(d))||(!d&&/^(C002|808D|8081|C00C)/.test(e.code))) bad.set(e.code,{d,n:(bad.get(e.code)?.n||0)+1}); }
       if (!log.length) out.push(['pass','Error log is empty']);
@@ -1251,7 +1264,7 @@ const NOR = {
     const macBytes = m => m.replace(/[^0-9A-F]/gi,'').match(/../g).map(h=>parseInt(h,16));
     // raw byte ranges restored from the console's original dump (copied as-is, e.g. board ID + LAN MAC + check bytes)
     for (const r of (edits.raw||[])){ let changed=false; for (let k=0;k<r.bytes.length;k++) if (u8[r.o+k]!==r.bytes[k]) { changed=true; break; }
-      if (changed){ u8.set(r.bytes, r.o); notes.push(`${r.label} restored from original`); } }
+      if (changed){ u8.set(r.bytes, r.o); notes.push(r.k==='hdr' ? r.label : `${r.label} restored from original`); } }
     if (edits.wifiMac && edits.wifiMac!==info.wifiMac){
       const base=macBytes(edits.wifiMac).reduce((v,b)=>v*256+b,0);
       this.WIFI_COPIES.forEach((o,i)=>u8.set(this.macBytesFromInt(base+i), o));
@@ -1259,6 +1272,8 @@ const NOR = {
     for (const f of this.OS_FLAGS){ const v=edits.flags?.[f.k]; if (v==null) continue;
       if (info.flags[f.k].every(x=>this.flagLabel(f,x)===this.flagLabel(f,v))) continue;
       this.OS_BASES.forEach(b=>u8[b+f.off]=v); notes.push(`${f.name} → ${this.flagLabel(f,v)} (both copies)`); }
+    if (edits.fixSum && this.idSum(u8)!==0){ const v=this.fixIdSum(u8); notes.push(`Identity checksum recalculated (0x1C41FE = ${hex([v&255,v>>8],' ')})`); }
+    if (this.idSum(u8)!==0 && this.idSum(src)===0) notes.push('⚠ These edits break the identity checksum');
     const diffs=[]; let cur=null;
     for (let i=0;i<u8.length;i++){
       if (u8[i]!==src[i]){ if(cur && i===cur.end) cur.end++; else { cur={start:i,end:i+1}; diffs.push(cur);} }
@@ -1312,6 +1327,7 @@ function renderInfo(){
   const rows=[
     ['Serial number', i.serial||'—'], ['Motherboard serial', i.moboSerial||'—'], ['Model / SKU', i.sku||'—'],
     ['Region', i.region[0]?`${i.region[1]} (${i.region[0]})`:'—'], ['Board', i.board, i.boardRaw],
+    ['HDMI chip', i.hdmi, `NOR setting at 0x1C4062 = ${hx(i.hdmiByte,2)}. The console expects this HDMI chip on the board.`],
     ['WiFi MAC', i.wifiMac, 'Wireless MAC block (base, +1, +2): '+i.wifiCopies.join(' · ')], ['LAN MAC', i.lanMac], ['Kiban ID', i.kiban||'—'],
     ['Firmware (installed)', i.fw, 'Version the console last installed'], ['Firmware (minimum)', i.fwMin, 'Oldest version this console will accept'], ['Firmware (factory)', i.fwFac, 'Version it shipped with'], ['Active slot', i.slot],
     ['OS flags', (()=>{ const on=NOR.OS_FLAGS.filter(f=>NOR.flagLabel(f,i.flags[f.k][0])!=='Off').map(f=>`${f.name}: ${NOR.flagLabel(f,i.flags[f.k][0])}`); return on.length?on.join(' · '):'All off (retail)'; })()],
@@ -1320,7 +1336,7 @@ function renderInfo(){
   $('#infoTable').innerHTML = rows.map(([k,v,t])=>`<div class="k">${esc(k)}</div><div class="v" title="${esc(t||v)}">${esc(v)}</div><div class="c"><button class="copy" data-copy="${esc(v)}">Copy</button></div>`).join('');
 }
 function renderChecks(){
-  $('#checksList').innerHTML = NOR.checks(nor.u8, nor.info).map(([k,t,s])=>`<li class="${k}"><span class="ic">${k==='pass'?'✓':k==='fail'?'✕':'!'}</span><div>${esc(t)}${s?`<small>${esc(s)}</small>`:''}</div></li>`).join('');
+  $('#checksList').innerHTML = NOR.checks(nor.u8, nor.info).map(([k,t,s,a])=>`<li class="${k}"><span class="ic">${k==='pass'?'✓':k==='fail'?'✕':'!'}</span><div>${esc(t)}${s?`<small>${esc(s)}</small>`:''}${a?`<button class="btn sm" style="margin-top:8px" data-fix="${a.id}">${esc(a.label)}</button>`:''}</div></li>`).join('');
 }
 function validate(){
   const e=nor.edits, errs={};
@@ -1356,7 +1372,7 @@ function renderEdits(){
   const advDirty = e.mobo!==i.moboSerial || e.wifiMac!==i.wifiMac || flagsDirty;
   const rawDirty = (e.raw||[]).some(r=>r.bytes.some((v,k)=>nor.u8[r.o+k]!==v));
   $('#advCount').textContent = advDirty ? 'changed' : '';
-  const dirty = e.edition!==i.edition || e.serial!==i.serial || e.sku!==i.sku || advDirty || rawDirty;
+  const dirty = e.edition!==i.edition || e.serial!==i.serial || e.sku!==i.sku || advDirty || rawDirty || (e.fixSum && i.idSum!==0);
   const anyErr = errs.serial||errs.sku||errs.adv;
   if (!dirty || anyErr){
     nor.result=null; $('#diffCard').classList.add('hidden');
@@ -1369,6 +1385,7 @@ function renderEdits(){
   $('#changeCount').className='tag blue'; $('#changeCount').textContent=`${r2.bytes} byte${r2.bytes!==1?'s':''} will change`;
   $('#diffCard').classList.remove('hidden');
   $('#diffSub').textContent = r2.notes.join(' · ');
+  if (NOR.idSum(r2.out)!==0) $('#diffSub').insertAdjacentHTML('beforeend', ` <span style="color:var(--bad)">The identity checksum doesn't add up, so this file would give 3 beeps.</span> <button class="btn sm" data-fix="fixsum">Recalculate checksum</button>`);
   $('#diffTable').innerHTML = '<tr><th>Offset</th><th>Before</th><th>After</th><th>Text</th></tr>' + r2.diffs.map(d=>{
     const o=nor.u8.subarray(d.start,d.end), n=r2.out.subarray(d.start,d.end);
     return `<tr><td>${hx(d.start)}</td><td class="old">${hex(o,' ')}</td><td class="new">${hex(n,' ')}</td><td><span class="old">${esc(ascii(o))}</span> → <span class="new">${esc(ascii(n))}</span></td></tr>`;
@@ -1390,7 +1407,7 @@ async function savePatched(){
 async function compareWith(file){
   if (!nor.u8||!file) return;
   const b=new Uint8Array(await file.arrayBuffer()), A=nor.info, B=NOR.parse(b);
-  const rows=[['Edition','edition'],['Serial','serial'],['Motherboard serial','moboSerial'],['SKU','sku'],['Board','board'],['WiFi MAC','wifiMac'],['LAN MAC','lanMac'],['Firmware','fw'],['Active slot','slot'],['IDU','idu']];
+  const rows=[['Edition','edition'],['Serial','serial'],['Motherboard serial','moboSerial'],['SKU','sku'],['Board','board'],['HDMI chip','hdmi'],['WiFi MAC','wifiMac'],['LAN MAC','lanMac'],['Firmware','fw'],['Active slot','slot'],['IDU','idu']];
   let diffBytes=0; const n=Math.min(b.length,nor.u8.length); for(let i=0;i<n;i++) if(b[i]!==nor.u8[i]) diffBytes++;
   diffBytes += Math.abs(b.length-nor.u8.length);
   $('#compareSub').textContent=`${nor.file.name} vs ${file.name} · ${diffBytes.toLocaleString()} bytes differ overall`;
@@ -1451,12 +1468,13 @@ async function loadRestore(file){
   if (!nor.u8 || !file) return;
   const u=new Uint8Array(await file.arrayBuffer());
   if (u.length!==nor.u8.length) return toast('Different size',`${file.name} is ${u.length.toLocaleString()} bytes; the loaded dump is ${nor.u8.length.toLocaleString()}.`,'err');
-  const oi=NOR.parse(u), fails=NOR.checks(u,oi).filter(c=>c[0]==='fail');
+  const oi=NOR.parse(u), fails=NOR.checks(u,oi).filter(c=>c[0]==='fail' && c[3]?.id!=='fixhdr');   // a corrupted header byte is handled below
   if (fails.length && !await confirmBox('Original dump has problems', `${file.name} fails: ${fails.map(f=>f[1]).join(', ')}. Only restore from it if you know these fields are still correct.`, 'Use it anyway', true)) return;
   if (oi.edition!==nor.info.edition) toast('Different edition flag',`Original reads ${oi.edition}, loaded dump reads ${nor.info.edition}. Restore doesn't change the edition flag.`,'warn',7000);
   restoreSrc={u, info:oi, name:file.name};
   const ci=nor.info, cu=nor.u8;
-  const hdrNote = u[0x1C4000]!==0x30 && cu[0x1C4000]===0x30 ? `<div class="hint" style="margin:8px 0 0;color:var(--warn)">The identity header byte in this file (0x1C4000) is ${hx(u[0x1C4000],2)} instead of 0x30, which usually means the chip was failing when it was read. Restore will keep 0x30.</div>` : '';
+  const hdrNote = (u[0x1C4000]!==0x30 && cu[0x1C4000]===0x30 ? `<div class="hint" style="margin:8px 0 0;color:var(--warn)">The identity header byte in this file (0x1C4000) is ${hx(u[0x1C4000],2)} instead of 0x30, which usually means the chip was failing when it was read. Restore will keep 0x30.</div>` : '')
+    + (oi.hdmiByte!==ci.hdmiByte ? `<div class="hint" style="margin:8px 0 0;color:var(--bad)"><b>HDMI chip mismatch.</b> Your console's NOR is set for <b>${esc(oi.hdmi)}</b>, but this donor is set for <b>${esc(ci.hdmi)}</b>. Restore identity doesn't change this setting. Use a donor with the same HDMI chip as your board, or the console won't accept it.</div>` : '');
   $('#restoreList').innerHTML = `<div class="hint" style="margin:10px 0 0">From <b>${esc(file.name)}</b>. Tick what to copy, then Apply.</div>${hdrNote}<div class="rlist">` + RESTORE_ITEMS.map(it=>{
     const from=it.text(oi,u), to=it.text(ci,cu), same = it.raw ? hex(u.subarray(it.raw[0],it.raw[0]+it.raw[1]))===hex(cu.subarray(it.raw[0],it.raw[0]+it.raw[1])) : from===to;
     return `<label class="${same?'same':''}"><input type="checkbox" data-ri="${it.k}" ${same?'':'checked'}><span>${esc(it.label)}</span><span class="rv">${same?esc(from)+' (already matches)':`<s>${esc(to)}</s> → ${esc(from)}`}</span></label>`; }).join('') +
@@ -1480,11 +1498,23 @@ function applyRestore(){
   if (picked.has('block')) $('#inLanMac').value=oi.lanMac;
   $('#restoreList').classList.add('hidden');
   renderEdits(); toast('Identity restored', `${picked.size} item(s) from ${restoreSrc.name}. Review the byte diff, then save.`, 'ok');
+  if (oi.hdmiByte!==nor.info.hdmiByte) toast('HDMI chip mismatch', `Your console expects ${oi.hdmi}; this donor is set for ${nor.info.hdmi}. Pick a donor with the same HDMI chip.`, 'err', 10000);
+  if (nor.result && NOR.idSum(nor.result.out)!==0) toast('Checksum doesn\'t add up', 'The restored identity block doesn\'t match its checksum. Check the original dump, or recalculate the checksum from the Changes card.', 'warn', 9000);
   if (fixedHdr) toast('Kept the identity header byte', `${restoreSrc.name} has ${hx(u[0x1C4000],2)} at 0x1C4000, which looks corrupted. Kept 0x30 from the loaded dump so the console doesn't give 3 beeps.`, 'warn', 9000);
   $('#diffCard').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth', block:'nearest'});
 }
 $('#btnRestore').addEventListener('click',()=>$('#restoreFile').click());
 $('#restoreFile').addEventListener('change',e=>{ const f=e.target.files[0]; e.target.value=''; if(f) loadRestore(f); });
+document.addEventListener('click',async ev=>{
+  const a=ev.target.closest?.('[data-fix]')?.dataset.fix; if (!a || !nor.u8) return;
+  const e=nor.edits;
+  if (a==='fixhdr'){ e.raw=(e.raw||[]).filter(r=>r.k!=='hdr'); e.raw.push({k:'hdr', o:0x1C4000, bytes:new Uint8Array([0x30]), label:'Identity header byte 0x1C4000 → 0x30'}); }
+  if (a==='fixsum'){
+    if (!await confirmBox('Recalculate the identity checksum?', 'This makes the checksum match the data in 0x1C4000–0x1C41FF, so the console accepts the block. It does not repair corrupted data: if the block was damaged, the console will accept the damaged values. Only do this if you know the data is right, for example after editing it yourself. Otherwise restore the identity from a good backup.', 'Recalculate', true)) return;
+    e.fixSum=true; }
+  renderEdits(); toast(a==='fixhdr'?'Header byte fixed':'Checksum will be recalculated','Review the byte diff, then save or write.','ok');
+  $('#diffCard').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth', block:'nearest'});
+});
 document.addEventListener('click',e=>{ if(e.target.id==='btnRestoreApply') applyRestore(); if(e.target.id==='btnRestoreCancel'){ $('#restoreList').classList.add('hidden'); } });
 
 /* ============================================================ Error DB */
@@ -2050,6 +2080,7 @@ function makeDemoDump(){
   for (const o of [0x4000,0x82000,0x100000,0x110000]) put(o,'SLB2');
   [0x1C73C0,0x1C73C6,0x1C73CC].forEach((o,i)=>put(o,[0x02,0xDE,0xAD,0x00,0x01,0x00+i]));
   for (let i=0x4010;i<0x80000;i++) b[i]=(i*2654435761>>>24)&255;   // filler "firmware"
+  b[NOR.HDMI_AT]=0xFF; NOR.fixIdSum(b);
   return b;
 }
 

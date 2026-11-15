@@ -13,6 +13,10 @@
   The error-log field meanings, OS flag offsets and UART pad positions documented by that
   project were reimplemented independently. No code or images were copied; reference
   photos are linked.
+- The identity block checksum (0x1C4000–0x1C41FF sums to zero) and the HDMI chip selector at 0x1C4062 are
+  documented in **ps5-hdmi-tool** by MeoWDev-MOD (https://github.com/MeoWDev-MOD/ps5-hdmi-tool). That project
+  lists no license, so no code was copied: NOR Studio implements the documented facts independently and verified
+  them against real dumps.
 - Hardware guide facts for EDM‑010/020 were taken from Sony board service manuals. No images
   or pages from those manuals are included in this repository.
 
